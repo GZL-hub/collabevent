@@ -25,21 +25,56 @@ const Sidebar: React.FC<SidebarProps> = ({
   toggleSidebar, 
   setCurrentPage 
 }) => {
-  return (
-    <div className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-indigo-800 text-white transition-all duration-300 ease-in-out`}>
-      <div className="flex items-center justify-between p-4 border-b border-indigo-700">
-        {isSidebarOpen ? (
-          <h1 className="text-xl font-semibold">Event Manager</h1>
-        ) : (
-          <h1 className="text-xl font-semibold">EM</h1>
-        )}
-        <button onClick={toggleSidebar} className="p-1 rounded-full hover:bg-indigo-700">
-          {isSidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
-        </button>
+  // CollabEvent Logo Component (only for expanded state)
+  const CollabEventLogo = () => {
+    return (
+      <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+          <div className="flex flex-col items-center">
+            <div className="w-3 h-3 bg-white rounded-full"></div>
+            <div className="flex space-x-1 mt-1">
+              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            CollabEvent
+          </h1>
+          <p className="text-xs text-gray-300">Event Management Software</p>
+        </div>
       </div>
+    );
+  };
+
+  return (
+    <div className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 text-white transition-all duration-300 ease-in-out relative`}>
+      {/* Header section - only show when expanded */}
+      {isSidebarOpen && (
+        <div className="flex items-center justify-between p-4 border-b border-slate-700">
+          <CollabEventLogo />
+          <button onClick={toggleSidebar} className="p-1 rounded-full hover:bg-slate-700 transition-colors">
+            <ChevronLeft size={20} />
+          </button>
+        </div>
+      )}
       
-      <nav className="p-4">
-        <ul className="space-y-2">
+      {/* Expand button when collapsed */}
+      {!isSidebarOpen && (
+        <div className="p-4 flex justify-center">
+          <button 
+            onClick={toggleSidebar} 
+            className="p-2 rounded-full hover:bg-slate-700 transition-colors"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      )}
+      
+      <nav className={`${isSidebarOpen ? 'p-4' : 'p-2'} h-full flex flex-col`}>
+        <ul className="space-y-2 flex-grow">
           <SidebarItem 
             icon={<Grid size={20} />} 
             text="Dashboard" 
@@ -84,7 +119,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           />
         </ul>
         
-        <div className="absolute bottom-4 w-full left-0 px-4">
+        {/* Logout Button */}
+        <div className="mt-auto pt-4 border-t border-slate-700">
           <SidebarItem 
             icon={<LogOut size={20} />} 
             text="Logout" 

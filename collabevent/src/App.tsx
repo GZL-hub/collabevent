@@ -3,7 +3,7 @@ import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
 
 // Importing page components
-import DashboardContent from './components/Pages/DashboardContent';
+import DashboardContent from './components/pages/dashboard/DashboardContent';
 import EventsContent from './components/Pages/EventsContent';
 import CalendarContent from './components/Pages/CalendarContent';
 import NotificationsContent from './components/Pages/NotificationsContent';

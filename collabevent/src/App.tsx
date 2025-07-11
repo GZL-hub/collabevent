@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
+import Login from './components/pages/login/Login';
 
 // Importing page components
 import DashboardContent from './components/pages/dashboard/DashboardContent';
@@ -11,10 +12,20 @@ import TeamActivityContent from './components/pages/TeamActivity';
 import SettingsContent from './components/Pages/SettingsContent';
 
 const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentPage, setCurrentPage] = useState('dashboard');
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCurrentPage('dashboard'); // Reset to dashboard when logging out
+  };
 
   const renderContent = () => {
     switch (currentPage) {
@@ -35,6 +46,12 @@ const App: React.FC = () => {
     }
   };
 
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
+
+  // Show main application if authenticated
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar 
@@ -48,6 +65,7 @@ const App: React.FC = () => {
         <Header 
           currentPage={currentPage}
           toggleSidebar={toggleSidebar}
+          onLogout={handleLogout}
         />
 
         <main className="p-6">

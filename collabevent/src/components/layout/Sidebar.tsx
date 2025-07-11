@@ -7,7 +7,6 @@ import {
   Settings, 
   Grid, 
   Clock, 
-  LogOut,
   Calendar
 } from 'lucide-react';
 import SidebarItem from './SidebarItem';
@@ -23,7 +22,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   isSidebarOpen, 
   currentPage, 
   toggleSidebar, 
-  setCurrentPage 
+  setCurrentPage
 }) => {
   // CollabEvent Logo Component (only for expanded state)
   const CollabEventLogo = () => {
@@ -50,10 +49,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <div className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 text-white transition-all duration-300 ease-in-out relative`}>
+    <div className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 text-white transition-all duration-300 ease-in-out h-screen flex flex-col`}>
       {/* Header section - only show when expanded */}
       {isSidebarOpen && (
-        <div className="flex items-center justify-between p-4 border-b border-slate-700">
+        <div className="flex items-center justify-between p-4 border-b border-slate-700 flex-shrink-0">
           <CollabEventLogo />
           <button onClick={toggleSidebar} className="p-1 rounded-full hover:bg-slate-700 transition-colors">
             <ChevronLeft size={20} />
@@ -63,7 +62,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       
       {/* Expand button when collapsed */}
       {!isSidebarOpen && (
-        <div className="p-4 flex justify-center">
+        <div className="p-4 flex justify-center flex-shrink-0">
           <button 
             onClick={toggleSidebar} 
             className="p-2 rounded-full hover:bg-slate-700 transition-colors"
@@ -73,8 +72,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
       )}
       
-      <nav className={`${isSidebarOpen ? 'p-4' : 'p-2'} h-full flex flex-col`}>
-        <ul className="space-y-2 flex-grow">
+      {/* Navigation */}
+      <nav className={`${isSidebarOpen ? 'p-4' : 'p-2'} flex-1`}>
+        <ul className="space-y-2">
           <SidebarItem 
             icon={<Grid size={20} />} 
             text="Dashboard" 
@@ -118,17 +118,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => setCurrentPage('settings')} 
           />
         </ul>
-        
-        {/* Logout Button */}
-        <div className="mt-auto pt-4 border-t border-slate-700">
-          <SidebarItem 
-            icon={<LogOut size={20} />} 
-            text="Logout" 
-            isOpen={isSidebarOpen} 
-            isActive={false}
-            onClick={() => console.log('Logout clicked')} 
-          />
-        </div>
       </nav>
     </div>
   );

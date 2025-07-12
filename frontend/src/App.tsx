@@ -5,7 +5,7 @@ import Login from './components/pages/login/Login';
 
 // Importing page components
 import DashboardContent from './components/pages/dashboard/DashboardContent';
-import EventsContent from './components/Pages/EventsContent';
+import EventsContent from './components/pages/event/EventsContent';
 import CalendarContent from './components/Pages/CalendarContent';
 import NotificationsContent from './components/Pages/NotificationsContent';
 import TeamActivityContent from './components/pages/TeamActivity';

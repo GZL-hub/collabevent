@@ -12,6 +12,8 @@ const RevenueChart: React.FC = () => {
       sparkline: {
         enabled: false,
       },
+      height: '100%',
+      parentHeightOffset: 0,
     },
     dataLabels: {
       enabled: false,
@@ -41,6 +43,14 @@ const RevenueChart: React.FC = () => {
     grid: {
       borderColor: '#f1f5f9',
     },
+    responsive: [{
+      breakpoint: 480,
+      options: {
+        chart: {
+          height: 200
+        }
+      }
+    }]
   };
 
   const revenueChartSeries = [
@@ -51,31 +61,30 @@ const RevenueChart: React.FC = () => {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-lg shadow-sm p-4 h-full flex flex-col overflow-hidden">
+      <div className="flex items-center justify-between mb-2">
         <h2 className="text-xl font-semibold text-gray-800">Revenue Breakdown</h2>
         <TrendingUp className="text-green-500" size={20} />
       </div>
       
       {/* Chart container with flex-grow to fill available space */}
-      <div className="flex-grow flex flex-col justify-center">
+      <div className="flex-grow min-h-0 flex flex-col justify-center">
         <Chart
           options={revenueChartOptions}
           series={revenueChartSeries}
           type="area"
-          height={300}
+          width="100%"
+          height="100%"
         />
       </div>
       
-      {/* Bottom stats section */}
-      <div className="mt-4 space-y-3">
-        <div className="flex justify-between text-sm text-gray-600">
-          <span>Total Revenue: $264k</span>
-          <span className="text-green-600">+12.5% from last month</span>
-        </div>
-        
-        {/* Additional revenue insights to match the height */}
-        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100">
+      {/* Simplified stats section */}
+      <div className="mt-2 pt-2 border-t border-gray-100">
+        <div className="grid grid-cols-3 gap-2">
+          <div className="text-center">
+            <p className="text-xs text-gray-500">Total Revenue</p>
+            <p className="text-lg font-semibold text-gray-800">$264k</p>
+          </div>
           <div className="text-center">
             <p className="text-xs text-gray-500">Avg. Monthly</p>
             <p className="text-lg font-semibold text-indigo-600">$44k</p>
@@ -83,18 +92,6 @@ const RevenueChart: React.FC = () => {
           <div className="text-center">
             <p className="text-xs text-gray-500">Peak Month</p>
             <p className="text-lg font-semibold text-green-600">$60k</p>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-3 gap-2 text-xs text-gray-500">
-          <div className="text-center p-2 bg-gray-50 rounded">
-            <p>Q1: $105k</p>
-          </div>
-          <div className="text-center p-2 bg-gray-50 rounded">
-            <p>Q2: $159k</p>
-          </div>
-          <div className="text-center p-2 bg-indigo-50 rounded text-indigo-600">
-            <p>Growth: +51%</p>
           </div>
         </div>
       </div>

@@ -78,8 +78,8 @@ const RecentActivity: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-lg shadow-sm p-4 h-full flex flex-col overflow-hidden">
+      <div className="flex items-center justify-between mb-3">
         <h2 className="text-xl font-semibold text-gray-800">Recent Activity</h2>
         <div className="flex items-center space-x-1 text-xs text-gray-500">
           <Clock size={14} />
@@ -87,43 +87,45 @@ const RecentActivity: React.FC = () => {
         </div>
       </div>
       
-      <div className="flex-grow space-y-3">
-        {activities.map((activity, index) => (
-          <div 
-            key={activity.id} 
-            className={`relative pl-12 pr-4 py-3 rounded-lg border-l-4 ${activity.borderColor} ${activity.bgColor} hover:shadow-sm transition-shadow duration-200`}
-          >
-            {/* Icon */}
-            <div className={`absolute left-3 top-3 w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-sm ${activity.iconColor}`}>
-              {activity.icon}
+      <div className="flex-grow min-h-0 overflow-auto pr-1">
+        <div className="space-y-2">
+          {activities.map((activity, index) => (
+            <div 
+              key={activity.id} 
+              className={`relative pl-12 pr-4 py-3 rounded-lg border-l-4 ${activity.borderColor} ${activity.bgColor} hover:shadow-sm transition-shadow duration-200`}
+            >
+              {/* Icon */}
+              <div className={`absolute left-3 top-3 w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-sm ${activity.iconColor}`}>
+                {activity.icon}
+              </div>
+              
+              {/* Activity Type Badge */}
+              <div className="flex items-center justify-between mb-1">
+                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${activity.bgColor} ${activity.iconColor} border border-current border-opacity-20`}>
+                  {getActivityTypeLabel(activity.type)}
+                </span>
+                <span className="text-xs text-gray-500 flex items-center space-x-1">
+                  <Clock size={10} />
+                  <span>{activity.time}</span>
+                </span>
+              </div>
+              
+              {/* Description */}
+              <p className="text-sm text-gray-700 leading-relaxed">
+                {activity.description}
+              </p>
+              
+              {/* Timeline connector line */}
+              {index < activities.length - 1 && (
+                <div className="absolute left-5 bottom-0 w-0.5 h-3 bg-gray-200 transform translate-y-full"></div>
+              )}
             </div>
-            
-            {/* Activity Type Badge */}
-            <div className="flex items-center justify-between mb-1">
-              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${activity.bgColor} ${activity.iconColor} border border-current border-opacity-20`}>
-                {getActivityTypeLabel(activity.type)}
-              </span>
-              <span className="text-xs text-gray-500 flex items-center space-x-1">
-                <Clock size={10} />
-                <span>{activity.time}</span>
-              </span>
-            </div>
-            
-            {/* Description */}
-            <p className="text-sm text-gray-700 leading-relaxed">
-              {activity.description}
-            </p>
-            
-            {/* Timeline connector line */}
-            {index < activities.length - 1 && (
-              <div className="absolute left-5 bottom-0 w-0.5 h-3 bg-gray-200 transform translate-y-full"></div>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
       
       {/* Footer */}
-      <div className="mt-4 pt-4 border-t border-gray-100">
+      <div className="mt-2 pt-2 border-t border-gray-100">
         <div className="flex items-center justify-between text-xs text-gray-500">
           <span>Showing last 5 activities</span>
           <button className="text-indigo-600 hover:text-indigo-800 font-medium">

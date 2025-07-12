@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Calendar, Clock, Users } from 'lucide-react';
+import { MapPin, Calendar } from 'lucide-react';
 
 interface EventLocation {
   id: number;
@@ -54,12 +54,12 @@ const LatestEvents: React.FC = () => {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">Latest Events</h2>
+    <div className="bg-white rounded-lg shadow-sm p-4 h-full flex flex-col overflow-hidden">
+      <h2 className="text-xl font-semibold text-gray-800 mb-3">Latest Events</h2>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Events List */}
-        <div className="space-y-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-grow min-h-0 overflow-hidden">
+        {/* Events List - with scroll */}
+        <div className="space-y-2 overflow-auto pr-1">
           {eventLocations.map((event, index) => (
             <div 
               key={event.id} 
@@ -81,7 +81,7 @@ const LatestEvents: React.FC = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-800 truncate">{event.name}</p>
-                    <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
+                    <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-gray-500">
                       <div className="flex items-center space-x-1">
                         <MapPin size={12} />
                         <span>{event.location}</span>
@@ -89,16 +89,6 @@ const LatestEvents: React.FC = () => {
                       <div className="flex items-center space-x-1">
                         <Calendar size={12} />
                         <span>{event.date}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
-                      <div className="flex items-center space-x-1">
-                        <Clock size={12} />
-                        <span>{event.time}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <Users size={12} />
-                        <span>{event.attendees} attendees</span>
                       </div>
                     </div>
                   </div>
@@ -112,7 +102,7 @@ const LatestEvents: React.FC = () => {
               {selectedEvent === event.id && (
                 <div className="mt-3 pt-3 border-t border-indigo-200">
                   <p className="text-sm text-gray-600">{event.description}</p>
-                  <div className="mt-2 flex space-x-2">
+                  <div className="mt-2 flex flex-wrap gap-2">
                     <button className="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700">
                       Edit Event
                     </button>
@@ -126,13 +116,13 @@ const LatestEvents: React.FC = () => {
           ))}
         </div>
 
-       {/* Map Section */}
-        <div className="space-y-4">
-          <div className="relative">
+        {/* Map Section - with flex column */}
+        <div className="flex flex-col h-full space-y-3 overflow-hidden">
+          <div className="relative flex-grow min-h-0">
             <img 
               src="/images/fakemap.png"
               alt="Event Locations Map"
-              className="w-full h-64 object-cover rounded-lg border"
+              className="w-full h-full object-cover rounded-lg border"
             />
             <div className="absolute top-2 left-2 bg-white px-2 py-1 rounded shadow text-xs font-medium">
               Event Locations
@@ -180,8 +170,7 @@ const LatestEvents: React.FC = () => {
           
           {/* Map Legend */}
           <div className="bg-gray-50 p-3 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-800 mb-2">Event Locations</h4>
-            <div className="grid grid-cols-1 gap-2 text-xs">
+            <div className="grid grid-cols-2 gap-2 text-xs">
               {eventLocations.map((event, index) => (
                 <div 
                   key={event.id} 
@@ -197,21 +186,10 @@ const LatestEvents: React.FC = () => {
                   }`}>
                     {String.fromCharCode(65 + index)}
                   </div>
-                  <span className="text-gray-600 truncate">{event.name} - {event.location}</span>
+                  <span className="text-gray-600 truncate">{event.name}</span>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Map Instructions */}
-          <div className="text-xs text-gray-500 text-center bg-gray-50 p-2 rounded">
-            <p>Click on events to highlight them on the map</p>
-            <p className="mt-1">
-              <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-1"></span>
-              Normal event
-              <span className="inline-block w-2 h-2 bg-red-500 rounded-full ml-3 mr-1"></span>
-              Selected event
-            </p>
           </div>
         </div>
       </div>

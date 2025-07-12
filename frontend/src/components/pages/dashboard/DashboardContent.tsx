@@ -14,36 +14,45 @@ const DashboardContent: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="space-y-6 px-2 sm:px-0">
+      {/* Stats Grid - Fixed height */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
         {statsData.map((stat, index) => (
-          <StatsCard
-            key={index}
-            title={stat.title}
-            value={stat.value}
-            color={stat.color}
-          />
+          <div key={index} className="h-[120px]"> {/* Fixed height container */}
+            <StatsCard
+              title={stat.title}
+              value={stat.value}
+              color={stat.color}
+            />
+          </div>
         ))}
       </div>
 
-      {/* Revenue Chart and Latest Events - Equal Heights */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-        <div className="h-full">
-          <RevenueChart />
+      {/* Charts Grid - Fixed height */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="h-[450px]"> {/* Fixed height container */}
+          <div className="h-full overflow-hidden">
+            <RevenueChart />
+          </div>
         </div>
-        <div className="h-full">
-          <LatestEvents />
+        <div className="h-[450px]"> {/* Fixed height container */}
+          <div className="h-full overflow-hidden">
+            <LatestEvents />
+          </div>
         </div>
       </div>
 
-      {/* Calendar and Recent Activity - Equal Heights */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-        <div className="h-full">
-          <EventCalendar />
+      {/* Bottom Grid - Fixed height */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="h-[450px]"> {/* Fixed height container */}
+          <div className="h-full overflow-hidden">
+            <EventCalendar />
+          </div>
         </div>
-        <div className="h-full">
-          <RecentActivity />
+        <div className="h-[450px]"> {/* Fixed height container */}
+          <div className="h-full overflow-hidden">
+            <RecentActivity />
+          </div>
         </div>
       </div>
     </div>

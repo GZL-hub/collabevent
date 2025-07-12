@@ -13,10 +13,11 @@ const EventCalendar: React.FC = () => {
     styleElement.textContent = `
       .rbc-calendar {
         font-family: inherit;
+        height: 100%;
       }
       
       .rbc-header {
-        padding: 8px 4px;
+        padding: 4px 2px;
         font-size: 12px;
         font-weight: 500;
         color: #6B7280;
@@ -24,8 +25,8 @@ const EventCalendar: React.FC = () => {
       }
       
       .rbc-date-cell {
-        padding: 4px;
-        font-size: 13px;
+        padding: 2px;
+        font-size: 12px;
       }
       
       .rbc-today {
@@ -38,17 +39,33 @@ const EventCalendar: React.FC = () => {
       
       .rbc-event {
         border-radius: 4px;
-        font-size: 11px;
+        font-size: 10px;
         margin: 1px;
+        padding: 1px 3px;
       }
       
       .rbc-month-view {
         border: 1px solid #E5E7EB;
         border-radius: 6px;
+        flex: 1;
+        min-height: 0;
       }
       
       .rbc-day-bg:hover {
         background-color: #F3F4F6;
+      }
+
+      .rbc-month-row {
+        overflow: hidden;
+        min-height: 0;
+      }
+
+      .rbc-toolbar {
+        flex-wrap: wrap;
+      }
+
+      .rbc-toolbar-label {
+        font-size: 14px;
       }
     `;
     
@@ -127,7 +144,7 @@ const EventCalendar: React.FC = () => {
         border: 'none',
         color: 'white',
         fontSize: '11px',
-        padding: '2px 4px'
+        padding: '1px 3px'
       }
     };
   };
@@ -150,19 +167,19 @@ const EventCalendar: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-lg shadow-sm p-4 h-full flex flex-col overflow-hidden">
+      <div className="flex items-center justify-between mb-2">
         <h2 className="text-xl font-semibold text-gray-800">Event Calendar</h2>
         <CalendarIcon className="text-indigo-600" size={20} />
       </div>
       
-      <div className="flex-grow" style={{ minHeight: '400px' }}>
+      <div className="flex-grow flex flex-col min-h-0 overflow-hidden">
         <Calendar
           localizer={localizer}
           events={events}
           startAccessor="start"
           endAccessor="end"
-          style={{ height: '100%' }}
+          style={{ flex: 1, minHeight: 0 }}
           views={['month']}
           defaultView="month"
           toolbar={true}
@@ -172,7 +189,7 @@ const EventCalendar: React.FC = () => {
           popupOffset={30}
           components={{
             toolbar: ({ label, onNavigate }) => (
-              <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-200">
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => onNavigate('PREV')}
@@ -180,7 +197,7 @@ const EventCalendar: React.FC = () => {
                   >
                     ←
                   </button>
-                  <h3 className="font-medium text-gray-800">{label}</h3>
+                  <h3 className="font-medium text-gray-800 text-sm">{label}</h3>
                   <button
                     onClick={() => onNavigate('NEXT')}
                     className="p-1 hover:bg-gray-100 rounded"
@@ -190,7 +207,7 @@ const EventCalendar: React.FC = () => {
                 </div>
                 <button
                   onClick={() => onNavigate('TODAY')}
-                  className="px-3 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                  className="px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700"
                 >
                   Today
                 </button>
@@ -201,7 +218,7 @@ const EventCalendar: React.FC = () => {
       </div>
       
       {/* Legend */}
-      <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+      <div className="mt-2 grid grid-cols-2 gap-2 text-xs border-t border-gray-100 pt-2">
         <div className="flex items-center space-x-1">
           <div className="w-3 h-3 bg-indigo-600 rounded"></div>
           <span className="text-gray-600">Product Launch</span>

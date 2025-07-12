@@ -108,14 +108,6 @@ const SettingsContent: React.FC<SettingsContentProps> = ({ currentUser }) => {
         <div className="p-6">
           {renderTabContent()}
         </div>
-
-        {/* Save Button - Only show for certain tabs */}
-        {(activeTab === 'profile' || activeTab === 'security' || activeTab === 'notifications') && (
-          <SaveButton 
-            onSave={handleSave} 
-            saveStatus={saveStatus} 
-          />
-        )}
       </div>
     </div>
   );

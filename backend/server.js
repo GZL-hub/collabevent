@@ -1,11 +1,16 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const cors = require('cors');
 require('dotenv').config();
+
+// Import routes
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Basic middleware
+// Middleware
+app.use(cors());
 app.use(express.json());
 
 // MongoDB connection function
@@ -19,7 +24,6 @@ const connectDB = async () => {
     console.log('✅ MongoDB Connected Successfully!');
     console.log(`📊 Database Host: ${conn.connection.host}`);
     console.log(`📂 Database Name: ${conn.connection.name}`);
-    console.log(`🔗 Connection State: Connected`);
     
   } catch (error) {
     console.error('❌ MongoDB Connection Failed:', error.message);
@@ -30,10 +34,13 @@ const connectDB = async () => {
 // Connect to database
 connectDB();
 
-// Basic route to test server
+// Routes
+app.use('/api/auth', authRoutes);
+
+// Basic route
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'Server is running and connected to MongoDB!',
+    message: 'CollabEvent API Server is running!',
     status: 'success'
   });
 });

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AlertCircle, Smartphone, Bell, Key, Eye, EyeOff, User } from 'lucide-react';
 import ToggleSwitch from './components/ToggleSwitch';
+import SaveButton from './SaveButton';
 
 interface User {
   _id: string;
@@ -29,40 +30,135 @@ const SecurityTab: React.FC<SecurityTabProps> = ({ currentUser }) => {
     loginNotifications: true,
     sessionTimeout: '30'
   });
+  
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleChangePassword = () => {
-    // TODO: Implement password change API call
+  const validatePassword = () => {
+    // Clear previous error messages
+    setError(null);
+    
+    // Check if passwords are empty
+    if (!security.currentPassword) {
+      setError('Current password is required');
+      return false;
+    }
+    
+    if (!security.newPassword) {
+      setError('New password is required');
+      return false;
+    }
+    
+    // Check if new passwords match
     if (security.newPassword !== security.confirmPassword) {
-      alert('New passwords do not match!');
-      return;
+      setError('New passwords do not match');
+      return false;
     }
     
-    if (security.newPassword.length < 6) {
-      alert('Password must be at least 6 characters long!');
-      return;
+    // Check password complexity
+    if (security.newPassword.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return false;
     }
+    
+    // More complex validation (optional)
+    const hasUppercase = /[A-Z]/.test(security.newPassword);
+    const hasLowercase = /[a-z]/.test(security.newPassword);
+    const hasNumber = /\d/.test(security.newPassword);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(security.newPassword);
+    
+    if (!(hasUppercase && hasLowercase && hasNumber && hasSpecialChar)) {
+      setError('Password must include uppercase, lowercase, number, and special character');
+      return false;
+    }
+    
+    return true;
+  };
 
-    console.log('Changing password for user:', currentUser?.email);
-    alert('Password changed successfully!');
+  const handleChangePassword = async () => {
+    if (!currentUser?._id) {
+      setError('User ID not found. Please log in again.');
+      return;
+    }
     
-    // Clear password fields
-    setSecurity({
-      ...security,
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    });
+    // Validate password
+    if (!validatePassword()) {
+      setSaveStatus('error');
+      return;
+    }
+    
+    // Set loading state
+    setSaveStatus('saving');
+    setError(null);
+    setSuccessMessage(null);
+    
+    try {
+      const response = await fetch(`http://localhost:5001/api/users/${currentUser._id}/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authorization header if needed
+          // 'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          currentPassword: security.currentPassword,
+          newPassword: security.newPassword
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update password');
+      }
+      
+      // Success
+      setSuccessMessage('Password updated successfully');
+      setSaveStatus('saved');
+      
+      // Clear password fields
+      setSecurity({
+        ...security,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      
+      // Reset to idle after 3 seconds
+      setTimeout(() => {
+        setSaveStatus('idle');
+      }, 3000);
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred while updating password');
+      setSaveStatus('error');
+      console.error('Error changing password:', err);
+    }
   };
 
   return (
     <div className="space-y-6">
+      {/* Success/Error messages */}
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+          {successMessage}
+        </div>
+      )}
+      
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
+    
       {/* Current User Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
         <div className="flex items-center space-x-3">
-          <User className="text-blue-600" size={20} />
+          <User className="text-indigo-600" size={20} />
           <div>
-            <h4 className="font-medium text-blue-800">Current User</h4>
-            <p className="text-sm text-blue-700">
+            <h4 className="font-medium text-indigo-800">Current User</h4>
+            <p className="text-sm text-indigo-700">
               {currentUser ? `${currentUser.firstName} ${currentUser.lastName} (${currentUser.email})` : 'No user logged in'}
             </p>
           </div>
@@ -90,7 +186,7 @@ const SecurityTab: React.FC<SecurityTabProps> = ({ currentUser }) => {
               type={showPassword ? 'text' : 'password'}
               value={security.currentPassword}
               onChange={(e) => setSecurity({ ...security, currentPassword: e.target.value })}
-              className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               placeholder="Enter your current password"
             />
             <button
@@ -109,7 +205,7 @@ const SecurityTab: React.FC<SecurityTabProps> = ({ currentUser }) => {
             type={showPassword ? 'text' : 'password'}
             value={security.newPassword}
             onChange={(e) => setSecurity({ ...security, newPassword: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             placeholder="Enter new password"
           />
         </div>
@@ -120,17 +216,16 @@ const SecurityTab: React.FC<SecurityTabProps> = ({ currentUser }) => {
             type={showPassword ? 'text' : 'password'}
             value={security.confirmPassword}
             onChange={(e) => setSecurity({ ...security, confirmPassword: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             placeholder="Confirm new password"
           />
         </div>
 
-        <button
-          onClick={handleChangePassword}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Update Password
-        </button>
+        {/* Replace button with SaveButton component */}
+        <SaveButton 
+          onSave={handleChangePassword}
+          saveStatus={saveStatus}
+        />
       </div>
 
       {/* Security Preferences */}
@@ -139,7 +234,7 @@ const SecurityTab: React.FC<SecurityTabProps> = ({ currentUser }) => {
         <div className="space-y-3">
           <ToggleSwitch
             icon={Smartphone}
-            iconColor="text-blue-600"
+            iconColor="text-indigo-600"
             title="Two-Factor Authentication"
             description="Add an extra layer of security to your account"
             checked={security.twoFactorEnabled}
@@ -166,7 +261,7 @@ const SecurityTab: React.FC<SecurityTabProps> = ({ currentUser }) => {
             <select
               value={security.sessionTimeout}
               onChange={(e) => setSecurity({ ...security, sessionTimeout: e.target.value })}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             >
               <option value="15">15 minutes</option>
               <option value="30">30 minutes</option>

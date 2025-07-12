@@ -1,23 +1,10 @@
 const User = require('../models/user');
+const bcrypt = require('bcryptjs');
 
 // Simple login controller
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    console.log('Login attempt:', { email, password }); // Debug log
-    
-    // DEBUG: Check database connection and collections
-    console.log('Database name:', User.db.name);
-    console.log('Collection name:', User.collection.name);
-    
-    // DEBUG: Count total documents
-    const totalUsers = await User.countDocuments({});
-    console.log('Total users in collection:', totalUsers);
-    
-    // DEBUG: Get all users to see what's actually in the database
-    const allUsers = await User.find({});
-    console.log('All users in database:', allUsers);
 
     // Check if email and password are provided
     if (!email || !password) {
@@ -31,20 +18,11 @@ exports.login = async (req, res) => {
     const user = await User.findOne({ email });
     
     if (!user) {
-      console.log('User not found:', email); // Debug log
-      
-      // DEBUG: Try finding with different case
-      const userLowerCase = await User.findOne({ email: email.toLowerCase() });
-      console.log('User with lowercase search:', userLowerCase);
-      
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
       });
     }
-
-    console.log('User found:', user.email); // Debug log
-    console.log('Password check:', { provided: password, stored: user.password }); // Debug log
 
     // Check if user is active
     if (user.status !== 'Active') {
@@ -54,9 +32,19 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Simple password check (plain text comparison)
-    if (user.password !== password) {
-      console.log('Password mismatch'); // Debug log
+    // Check password
+    let isPasswordValid;
+    
+    // Handle both hashed and plain text passwords during transition
+    if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
+      // If password is already hashed with bcrypt
+      isPasswordValid = await bcrypt.compare(password, user.password);
+    } else {
+      // Plain text comparison for backward compatibility
+      isPasswordValid = (user.password === password);
+    }
+
+    if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
@@ -66,8 +54,6 @@ exports.login = async (req, res) => {
     // Return user data (without password)
     const userResponse = user.toObject();
     delete userResponse.password;
-
-    console.log('Login successful for:', user.email); // Debug log
 
     res.json({
       success: true,
@@ -84,23 +70,84 @@ exports.login = async (req, res) => {
   }
 };
 
-// Get all users (for testing)
+// Register new user
+exports.register = async (req, res) => {
+  try {
+    const { firstName, lastName, email, password, role } = req.body;
+    
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide all required fields'
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'User with this email already exists'
+      });
+    }
+
+    // Hash password for new users
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create new user
+    const newUser = new User({
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+      role: role || 'Viewer', // Default role if not specified
+      status: 'Active'
+    });
+
+    // Save user to database
+    await newUser.save();
+
+    // Return user data (without password)
+    const userResponse = newUser.toObject();
+    delete userResponse.password;
+
+    res.status(201).json({
+      success: true,
+      message: 'User registered successfully',
+      user: userResponse
+    });
+
+  } catch (error) {
+    console.error('Registration error:', error);
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(val => val.message);
+      return res.status(400).json({
+        success: false,
+        message: messages.join(', ')
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Server error during registration'
+    });
+  }
+};
+
+// Get all users (for admin)
 exports.getAllUsers = async (req, res) => {
   try {
-    console.log('Getting all users...');
-    console.log('Database name:', User.db.name);
-    console.log('Collection name:', User.collection.name);
-    
-    const users = await User.find({});
-    console.log('Retrieved users:', users);
-    console.log('Number of users found:', users.length);
+    const users = await User.find({}).select('-password');
     
     res.json({
       success: true,
-      users,
       count: users.length,
-      database: User.db.name,
-      collection: User.collection.name
+      users
     });
   } catch (error) {
     console.error('Get users error:', error);

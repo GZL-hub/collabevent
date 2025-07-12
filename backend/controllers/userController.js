@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const bcrypt = require('bcryptjs');
 
 // Get user profile
 exports.getUserProfile = async (req, res) => {
@@ -85,6 +86,69 @@ exports.updateProfile = async (req, res) => {
       });
     }
     
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Update user password
+exports.updatePassword = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { currentPassword, newPassword } = req.body;
+    
+    // Validate input
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required'
+      });
+    }
+    
+    // Find user
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    // Check password type and verify
+    let isPasswordValid;
+    
+    if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
+      // If password is already hashed with bcrypt
+      isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    } else {
+      // Plain text comparison for backward compatibility
+      isPasswordValid = (currentPassword === user.password);
+    }
+    
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Current password is incorrect'
+      });
+    }
+    
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    
+    // Save updated user
+    await user.save();
+    
+    res.json({
+      success: true,
+      message: 'Password updated successfully'
+    });
+    
+  } catch (error) {
+    console.error('Error updating password:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'

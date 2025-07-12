@@ -9,7 +9,7 @@ import EventsContent from './components/Pages/EventsContent';
 import CalendarContent from './components/Pages/CalendarContent';
 import NotificationsContent from './components/Pages/NotificationsContent';
 import TeamActivityContent from './components/pages/TeamActivity';
-import SettingsContent from './components/Pages/SettingsContent';
+import SettingsContent from './components/pages/settings/SettingsContent';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);

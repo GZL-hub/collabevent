@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
 import Login from './components/pages/login/Login';
@@ -11,20 +11,53 @@ import NotificationsContent from './components/Pages/NotificationsContent';
 import TeamActivityContent from './components/pages/TeamActivity';
 import SettingsContent from './components/pages/settings/SettingsContent';
 
+interface User {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  status: string;
+  department?: string;
+  bio?: string;
+  phone?: string;
+  avatar?: string;
+}
+
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentPage, setCurrentPage] = useState('dashboard');
 
+  // Check for existing user session on app load
+  useEffect(() => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      try {
+        const user = JSON.parse(savedUser);
+        setCurrentUser(user);
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Error parsing saved user:', error);
+        localStorage.removeItem('user');
+      }
+    }
+  }, []);
+
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-  const handleLogin = () => {
+  const handleLogin = (user: User) => {
+    setCurrentUser(user);
     setIsAuthenticated(true);
+    console.log('User logged in:', user);
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    setCurrentPage('dashboard'); // Reset to dashboard when logging out
+    setCurrentUser(null);
+    setCurrentPage('dashboard');
+    localStorage.removeItem('user');
   };
 
   const renderContent = () => {
@@ -40,7 +73,7 @@ const App: React.FC = () => {
       case 'team':
         return <TeamActivityContent />;
       case 'settings':
-        return <SettingsContent />;
+        return <SettingsContent currentUser={currentUser} />;
       default:
         return <DashboardContent />;
     }
@@ -66,6 +99,7 @@ const App: React.FC = () => {
           currentPage={currentPage}
           toggleSidebar={toggleSidebar}
           onLogout={handleLogout}
+          currentUser={currentUser}
         />
 
         <main className="p-6">

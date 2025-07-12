@@ -13,9 +13,24 @@ import UserManagementTab from './UserManagementTab';
 import SystemTab from './SystemTab';
 import SaveButton from './SaveButton';
 
+interface User {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  status: string;
+  department?: string;
+  bio?: string;
+  phone?: string;
+  avatar?: string;
+}
 
+interface SettingsContentProps {
+  currentUser: User | null;
+}
 
-const SettingsContent: React.FC = () => {
+const SettingsContent: React.FC<SettingsContentProps> = ({ currentUser }) => {
   const [activeTab, setActiveTab] = useState('profile');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
@@ -39,23 +54,37 @@ const SettingsContent: React.FC = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'profile':
-        return <ProfileTab />;
+        return <ProfileTab currentUser={currentUser} />;
       case 'security':
-        return <SecurityTab />;
+        return <SecurityTab currentUser={currentUser} />;
       case 'notifications':
-        return <NotificationsTab />;
+        return <NotificationsTab currentUser={currentUser} />;
       case 'rbac':
         return <UserManagementTab />;
       case 'system':
         return <SystemTab />;
       default:
-        return <ProfileTab />;
+        return <ProfileTab currentUser={currentUser} />;
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-sm">
+      {/* Header Section */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+          <p className="text-gray-600 mt-1">
+            Manage your account and application preferences
+            {currentUser && (
+              <span className="ml-2 text-sm">
+                • Logged in as <span className="font-medium">{currentUser.firstName} {currentUser.lastName}</span>
+              </span>
+            )}
+          </p>
+        </div>
+
+        {/* Tab Navigation */}
         <div className="border-b border-gray-200">
           <nav className="-mb-px flex space-x-8 px-6">
             {tabs.map((tab) => (
@@ -75,10 +104,12 @@ const SettingsContent: React.FC = () => {
           </nav>
         </div>
 
+        {/* Tab Content */}
         <div className="p-6">
           {renderTabContent()}
         </div>
 
+        {/* Save Button - Only show for certain tabs */}
         {(activeTab === 'profile' || activeTab === 'security' || activeTab === 'notifications') && (
           <SaveButton 
             onSave={handleSave} 

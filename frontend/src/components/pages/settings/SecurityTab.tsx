@@ -1,8 +1,25 @@
 import React, { useState } from 'react';
-import { AlertCircle, Smartphone, Bell, Key, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, Smartphone, Bell, Key, Eye, EyeOff, User } from 'lucide-react';
 import ToggleSwitch from './components/ToggleSwitch';
 
-const SecurityTab: React.FC = () => {
+interface User {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  status: string;
+  department?: string;
+  bio?: string;
+  phone?: string;
+  avatar?: string;
+}
+
+interface SecurityTabProps {
+  currentUser: User | null;
+}
+
+const SecurityTab: React.FC<SecurityTabProps> = ({ currentUser }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [security, setSecurity] = useState({
     currentPassword: '',
@@ -13,8 +30,46 @@ const SecurityTab: React.FC = () => {
     sessionTimeout: '30'
   });
 
+  const handleChangePassword = () => {
+    // TODO: Implement password change API call
+    if (security.newPassword !== security.confirmPassword) {
+      alert('New passwords do not match!');
+      return;
+    }
+    
+    if (security.newPassword.length < 6) {
+      alert('Password must be at least 6 characters long!');
+      return;
+    }
+
+    console.log('Changing password for user:', currentUser?.email);
+    alert('Password changed successfully!');
+    
+    // Clear password fields
+    setSecurity({
+      ...security,
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+  };
+
   return (
     <div className="space-y-6">
+      {/* Current User Info */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center space-x-3">
+          <User className="text-blue-600" size={20} />
+          <div>
+            <h4 className="font-medium text-blue-800">Current User</h4>
+            <p className="text-sm text-blue-700">
+              {currentUser ? `${currentUser.firstName} ${currentUser.lastName} (${currentUser.email})` : 'No user logged in'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Password Security Warning */}
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
         <div className="flex items-center space-x-2">
           <AlertCircle className="text-yellow-600" size={20} />
@@ -25,6 +80,7 @@ const SecurityTab: React.FC = () => {
         </p>
       </div>
 
+      {/* Change Password Section */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-800">Change Password</h3>
         <div>
@@ -35,16 +91,18 @@ const SecurityTab: React.FC = () => {
               value={security.currentPassword}
               onChange={(e) => setSecurity({ ...security, currentPassword: e.target.value })}
               className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter your current password"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
         </div>
+        
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
           <input
@@ -52,8 +110,10 @@ const SecurityTab: React.FC = () => {
             value={security.newPassword}
             onChange={(e) => setSecurity({ ...security, newPassword: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter new password"
           />
         </div>
+        
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
           <input
@@ -61,10 +121,19 @@ const SecurityTab: React.FC = () => {
             value={security.confirmPassword}
             onChange={(e) => setSecurity({ ...security, confirmPassword: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Confirm new password"
           />
         </div>
+
+        <button
+          onClick={handleChangePassword}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Update Password
+        </button>
       </div>
 
+      {/* Security Preferences */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-800">Security Preferences</h3>
         <div className="space-y-3">

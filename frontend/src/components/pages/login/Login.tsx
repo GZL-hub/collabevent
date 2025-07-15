@@ -135,7 +135,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
               <p className="text-blue-400 text-sm">
                 <strong>Test Accounts:</strong><br />
-                Admin: admin@collabevent.com / admin123<br />
+                Admin: admin@collabevent.com / Admin@123<br />
                 Manager: john@collabevent.com / manager123
               </p>
             </div>

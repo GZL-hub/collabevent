@@ -8,14 +8,16 @@ import AttendeeBadge from './AttendeeBadge';
 
 const columnHelper = createColumnHelper<Event>();
 
-export const getEventColumns = () => [
+export const getEventColumns = (
+  onEdit?: (event: Event) => void,
+  onDelete?: (event: Event) => void
+) => [
   columnHelper.accessor('title', {
     header: 'Title',
     cell: info => (
       <div className="font-medium text-gray-900 text-sm">{info.getValue()}</div>
     ),
   }),
-  // Date column
   columnHelper.accessor(row => row.startDate, {
     id: 'date',
     header: () => (
@@ -30,7 +32,6 @@ export const getEventColumns = () => [
       </div>
     ),
   }),
-  // Start Time column
   columnHelper.accessor(row => row.startDate, {
     id: 'startTime',
     header: () => (
@@ -45,7 +46,6 @@ export const getEventColumns = () => [
       </div>
     ),
   }),
-  // End Time column
   columnHelper.accessor(row => row.endDate, {
     id: 'endTime',
     header: () => (
@@ -92,7 +92,7 @@ export const getEventColumns = () => [
     header: () => (
       <div className="flex items-center">
         <Users size={14} className="mr-1" />
-        <span>Attendee Type</span>
+        <span>Registration Type</span>
       </div>
     ),
     cell: info => <AttendeeBadge type={info.getValue()} />,
@@ -104,17 +104,33 @@ export const getEventColumns = () => [
   columnHelper.display({
     id: 'actions',
     header: 'Actions',
-    cell: info => (
-      <div className="flex space-x-3 text-sm">
-        <button className="text-indigo-600 hover:text-indigo-900 flex items-center">
-          <Edit size={14} className="mr-1" />
-          <span>Edit</span>
-        </button>
-        <button className="text-red-600 hover:text-red-900 flex items-center">
-          <Trash2 size={14} className="mr-1" />
-          <span>Delete</span>
-        </button>
-      </div>
-    ),
+    cell: info => {
+      const event = info.row.original;
+      
+      return (
+        <div className="flex space-x-3 text-sm">
+          {onEdit && (
+            <button 
+              onClick={() => onEdit(event)}
+              className="text-indigo-600 hover:text-indigo-900 flex items-center transition-colors"
+              title="Edit event"
+            >
+              <Edit size={14} className="mr-1" />
+              <span>Edit</span>
+            </button>
+          )}
+          {onDelete && (
+            <button 
+              onClick={() => onDelete(event)}
+              className="text-red-600 hover:text-red-900 flex items-center transition-colors"
+              title="Delete event"
+            >
+              <Trash2 size={14} className="mr-1" />
+              <span>Delete</span>
+            </button>
+          )}
+        </div>
+      );
+    },
   }),
 ];

@@ -6,6 +6,7 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user'); 
+const eventRoutes = require('./routes/event');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -38,15 +39,24 @@ connectDB();
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/events', eventRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
   res.json({ 
     message: 'CollabEvent API Server is running!',
-    status: 'success'
+    status: 'success',
+    availableRoutes: [
+      'GET /api/auth/login',
+      'GET /api/auth/users',
+      'GET /api/events',
+      'POST /api/events',
+      'GET /api/events/:id',
+      'PUT /api/events/:id',
+      'DELETE /api/events/:id'
+    ]
   });
 });
-
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

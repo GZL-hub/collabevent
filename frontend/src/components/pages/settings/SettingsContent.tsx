@@ -72,18 +72,6 @@ const SettingsContent: React.FC<SettingsContentProps> = ({ currentUser }) => {
     <div className="space-y-6">
       {/* Header Section */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600 mt-1">
-            Manage your account and application preferences
-            {currentUser && (
-              <span className="ml-2 text-sm">
-                • Logged in as <span className="font-medium">{currentUser.firstName} {currentUser.lastName}</span>
-              </span>
-            )}
-          </p>
-        </div>
-
         {/* Tab Navigation */}
         <div className="border-b border-gray-200">
           <nav className="-mb-px flex space-x-8 px-6">

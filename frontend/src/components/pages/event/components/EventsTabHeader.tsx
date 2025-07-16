@@ -17,10 +17,9 @@ const EventsTableHeader: React.FC<EventsTableHeaderProps> = ({
           <Calendar className="w-5 h-5 text-indigo-600" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Events</h1>
-          <p className="text-sm text-gray-600">
-            Manage and organize your events ({totalEvents} total)
-          </p>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Manage and organize your events
+          </h2>
         </div>
       </div>
       

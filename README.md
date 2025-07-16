@@ -181,15 +181,6 @@ npm run lint
 # Format code
 npm run format
 ```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ### Development Guidelines
 - Follow TypeScript best practices
 - Write meaningful commit messages
@@ -201,19 +192,11 @@ npm run format
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙋‍♂️ Support
-
-If you encounter any issues or have questions:
-
-1. Check the [Issues](https://github.com/yourusername/collabevent/issues) page
-2. Create a new issue with detailed information
-3. Join our [Discord](https://discord.gg/collabevent) community
-
 ## 👨‍💻 Author
 
 **Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Email: your.email@example.com
+- GitHub: [@GZL-hub](https://github.com/GZL-hub)
+- Email: zonglingoo@gmail.com
 
 ## 🙏 Acknowledgments
 
@@ -224,5 +207,3 @@ If you encounter any issues or have questions:
 - Open source community for inspiration and tools
 
 ---
-
-**Made with ❤️ for better team collaboration**

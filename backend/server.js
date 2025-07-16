@@ -7,6 +7,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user'); 
 const eventRoutes = require('./routes/event');
+const roleRoutes = require('./routes/role')
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -40,6 +41,7 @@ connectDB();
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/roles', roleRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
@@ -53,10 +55,18 @@ app.get('/', (req, res) => {
       'POST /api/events',
       'GET /api/events/:id',
       'PUT /api/events/:id',
-      'DELETE /api/events/:id'
+      'DELETE /api/events/:id',
+      'GET /api/roles',
+      'POST /api/roles',
+      'GET /api/roles/:id',
+      'PUT /api/roles/:id',
+      'DELETE /api/roles/:id',
+      'GET /api/roles/permissions',
+      'GET /api/roles/stats'
     ]
   });
 });
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

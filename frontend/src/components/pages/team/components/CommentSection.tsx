@@ -8,6 +8,8 @@ interface CommentSectionProps {
   onLike: (activityId: string) => void;
   onPin: (activityId: string) => void;
   onReply: (activityId: string, content: string) => void;
+  onDeleteReply?: (activityId: string, replyId: string) => void;
+  currentUserId?: string;
   onAddComment: (content: string) => void;
 }
 
@@ -16,6 +18,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   onLike,
   onPin,
   onReply,
+  onDeleteReply,
+  currentUserId,
   onAddComment
 }) => {
   const [newComment, setNewComment] = useState('');
@@ -35,10 +39,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({
       {/* Comments Feed */}
       <div className="bg-white rounded-lg shadow-sm p-6">
         <ActivityFeed
-          activities={commentActivities}
+          activities={activities.filter(a => a.type === 'comment')}
           onLike={onLike}
           onPin={onPin}
           onReply={onReply}
+          onDeleteReply={onDeleteReply}
+          currentUserId={currentUserId}
           replyingTo={replyingTo}
           setReplyingTo={setReplyingTo}
           replyContent={replyContent}

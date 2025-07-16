@@ -8,25 +8,20 @@ interface AllActivitySectionProps {
   onLike: (activityId: string) => void;
   onPin: (activityId: string) => void;
   onReply: (activityId: string, content: string) => void;
+  onDeleteReply?: (activityId: string, replyId: string) => void;
+  currentUserId?: string;
 }
 
 const AllActivitySection: React.FC<AllActivitySectionProps> = ({
   activities,
   onLike,
   onPin,
-  onReply
+  onReply,
+  onDeleteReply,
+  currentUserId
 }) => {
   const [replyingTo, setReplyingTo] = React.useState<string | null>(null);
   const [replyContent, setReplyContent] = React.useState('');
-
-  const activityStats = {
-    comments: activities.filter(a => a.type === 'comment').length,
-    events: activities.filter(a => ['event_created', 'event_updated'].includes(a.type)).length,
-    mentions: activities.filter(a => a.type === 'mention').length,
-    files: activities.filter(a => a.type === 'file_uploaded').length,
-    tasks: activities.filter(a => a.type === 'task_completed').length,
-    total: activities.length
-  };
 
   return (
     <div className="space-y-6">
@@ -45,6 +40,8 @@ const AllActivitySection: React.FC<AllActivitySectionProps> = ({
           onLike={onLike}
           onPin={onPin}
           onReply={onReply}
+          onDeleteReply={onDeleteReply}
+          currentUserId={currentUserId}
           replyingTo={replyingTo}
           setReplyingTo={setReplyingTo}
           replyContent={replyContent}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Reply } from './types';
+import { Activity } from './types';
 import { MessageCircle } from 'lucide-react';
 import ActivityItem from './ActivityItem';
 
@@ -8,6 +8,8 @@ interface ActivityFeedProps {
   onLike: (activityId: string) => void;
   onPin: (activityId: string) => void;
   onReply: (activityId: string, content: string) => void;
+  onDeleteReply?: (activityId: string, replyId: string) => void;
+  currentUserId?: string;
   replyingTo: string | null;
   setReplyingTo: (id: string | null) => void;
   replyContent: string;
@@ -22,6 +24,8 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
   replyingTo,
   setReplyingTo,
   replyContent,
+  onDeleteReply,
+  currentUserId,
   setReplyContent
 }) => {
   if (activities.length === 0) {
@@ -43,6 +47,8 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
           onLike={onLike}
           onPin={onPin}
           onReply={onReply}
+          onDeleteReply={onDeleteReply}
+          currentUserId={currentUserId}
           replyingTo={replyingTo}
           setReplyingTo={setReplyingTo}
           replyContent={replyContent}

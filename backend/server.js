@@ -7,7 +7,8 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user'); 
 const eventRoutes = require('./routes/event');
-const roleRoutes = require('./routes/role')
+const roleRoutes = require('./routes/role');
+const activityRoutes = require('./routes/activities');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -42,6 +43,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/roles', roleRoutes);
+app.use('/api/activities', activityRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
@@ -62,7 +64,16 @@ app.get('/', (req, res) => {
       'PUT /api/roles/:id',
       'DELETE /api/roles/:id',
       'GET /api/roles/permissions',
-      'GET /api/roles/stats'
+      'GET /api/roles/stats',
+      'GET /api/activities', // Add these lines
+      'POST /api/activities',
+      'GET /api/activities/:id',
+      'PUT /api/activities/:id',
+      'DELETE /api/activities/:id',
+      'POST /api/activities/:id/like',
+      'PUT /api/activities/:id/pin',
+      'POST /api/activities/:id/reply',
+      'GET /api/activities/stats'
     ]
   });
 });

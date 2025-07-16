@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus } from 'lucide-react';
-import { Activity, TeamMember, FilterType, Reply } from './types';
+import { Search, Plus, RefreshCw } from 'lucide-react';
+import { Activity, TeamMember, FilterType } from './types';
+import { useActivities } from './hook/activityHook';
 
 // Import modular components
 import AllActivitySection from './components/AllActivitySection';
@@ -10,166 +11,192 @@ import MentionSection from './components/MentionSection';
 import NewActivityModal from './components/NewActivityModal';
 
 const TeamActivityContent: React.FC = () => {
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const {
+    activities,
+    loading,
+    error,
+    pagination,
+    fetchActivities,
+    createActivity,
+    likeActivity,
+    pinActivity,
+    addReply,
+    deleteActivity,
+    deleteReply
+  } = useActivities();
+
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [filter, setFilter] = useState<FilterType>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewActivityModalOpen, setIsNewActivityModalOpen] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  // Mock data - replace with API calls
+  // Initialize data on component mount
   useEffect(() => {
-    setTeamMembers([
-      { id: '1', name: 'Jane Doe', role: 'Event Manager', status: 'online' },
-      { id: '2', name: 'Tom Smith', role: 'Coordinator', status: 'online' },
-      { id: '3', name: 'Mark Johnson', role: 'Team Lead', status: 'away' },
-      { id: '4', name: 'Sarah Wilson', role: 'Designer', status: 'offline' },
-    ]);
-
-    setActivities([
-      {
-        id: '1',
-        type: 'event_updated',
-        userId: '1',
-        userName: 'Jane Doe',
-        content: 'Updated the venue location and added catering requirements',
-        eventName: 'Product Launch',
-        timestamp: '2025-07-16T10:30:00Z',
-        likes: 3,
-        replies: [
-          {
-            id: 'r1',
-            userId: '2',
-            userName: 'Tom Smith',
-            content: 'Great! The new venue looks perfect for our needs.',
-            timestamp: '2025-07-16T10:45:00Z'
-          }
-        ],
-        isPinned: true,
-        tags: ['venue', 'catering']
-      },
-      {
-        id: '2',
-        type: 'comment',
-        userId: '2',
-        userName: 'Tom Smith',
-        content: 'I think we should add a networking session after the main presentation. What does everyone think?',
-        eventName: 'Customer Webinar',
-        timestamp: '2025-07-16T09:15:00Z',
-        likes: 5,
-        replies: [],
-        tags: ['networking', 'suggestion']
-      },
-      {
-        id: '3',
-        type: 'event_created',
-        userId: '3',
-        userName: 'Mark Johnson',
-        content: 'Created a new team building event for next Friday',
-        eventName: 'Team Building',
-        timestamp: '2025-07-15T14:15:00Z',
-        likes: 8,
-        replies: []
-      },
-      {
-        id: '4',
-        type: 'mention',
-        userId: '4',
-        userName: 'Sarah Wilson',
-        content: '@Jane Doe Could you review the design mockups I shared? Need your feedback by EOD.',
-        timestamp: '2025-07-15T11:20:00Z',
-        likes: 1,
-        replies: []
+    // Get current user ID from authentication
+    const getUserId = () => {
+      // Option 1: From localStorage (if stored during login)
+      const storedUserId = localStorage.getItem('userId');
+      if (storedUserId && storedUserId !== 'current-user-id') {
+        return storedUserId;
       }
-    ]);
-  }, []);
 
-  // Event handlers
-  const handleAddComment = (content: string) => {
-    const newActivity: Activity = {
-      id: Date.now().toString(),
-      type: 'comment',
-      userId: 'current-user',
-      userName: 'Current User',
-      content,
-      timestamp: new Date().toISOString(),
-      likes: 0,
-      replies: []
+      // Option 2: From auth token
+      const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+      if (token) {
+        try {
+          // Decode JWT token to get user ID
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          return payload.userId || payload.id || payload.sub;
+        } catch (err) {
+          console.error('Error decoding token:', err);
+        }
+      }
+
+      // Option 3: Use a real user ID from your database for testing
+      // Based on your sample data, use the admin user ID
+      return '68774c5d303caa8b867ae00c'; // Admin User from your sample data
     };
 
-    setActivities(prev => [newActivity, ...prev]);
+    const userId = getUserId();
+    console.log('Current user ID:', userId);
+    
+    if (!userId || userId === 'current-user-id') {
+      setAuthError('User not authenticated. Please log in again.');
+      return;
+    }
+    
+    setCurrentUserId(userId);
+    setAuthError(null);
+    
+    // Fetch initial activities
+    fetchActivities();
+  }, [fetchActivities]);
+
+  // Fetch activities when filter changes
+  useEffect(() => {
+    if (!currentUserId || currentUserId === 'current-user-id') {
+      return; // Don't fetch if user is not authenticated
+    }
+
+    const params: any = {};
+    
+    if (filter !== 'all') {
+      if (filter === 'comments') params.type = 'comment';
+      if (filter === 'events') params.type = 'event';
+      if (filter === 'mentions') params.type = 'mention';
+    }
+    
+    if (searchTerm) {
+      params.search = searchTerm;
+    }
+
+    fetchActivities(params);
+  }, [filter, searchTerm, fetchActivities, currentUserId]);
+
+  // Event handlers
+  const handleAddComment = async (content: string) => {
+    if (!currentUserId || currentUserId === 'current-user-id') {
+      setAuthError('User not authenticated. Please log in again.');
+      return;
+    }
+
+    try {
+      await createActivity({
+        type: 'comment',
+        message: content,
+        userId: currentUserId,
+        tags: []
+      });
+    } catch (err) {
+      console.error('Error creating comment:', err);
+    }
   };
 
-  const handleNewActivity = (activityData: {
-    type: 'comment' | 'event_updated' | 'mention';
-    content: string;
+  const handleNewActivity = async (activityData: {
+    type: 'comment' | 'event' | 'mention';
+    message: string;
     eventId?: string;
-    eventName?: string;
     mentions?: string[];
     tags?: string[];
   }) => {
-    const newActivity: Activity = {
-      id: Date.now().toString(),
-      type: activityData.type,
-      userId: 'current-user',
-      userName: 'Current User',
-      content: activityData.content,
-      eventName: activityData.eventName,
-      timestamp: new Date().toISOString(),
-      likes: 0,
-      replies: [],
-      tags: activityData.tags
-    };
+    if (!currentUserId || currentUserId === 'current-user-id') {
+      setAuthError('User not authenticated. Please log in again.');
+      return;
+    }
 
-    setActivities(prev => [newActivity, ...prev]);
+    try {
+      await createActivity({
+        type: activityData.type,
+        message: activityData.message,
+        userId: currentUserId,
+        eventId: activityData.eventId,
+        mentions: activityData.mentions,
+        tags: activityData.tags
+      });
+    } catch (err) {
+      console.error('Error creating activity:', err);
+    }
   };
 
-  const handleReply = (activityId: string, content: string) => {
-    const newReply: Reply = {
-      id: Date.now().toString(),
-      userId: 'current-user',
-      userName: 'Current User',
-      content,
-      timestamp: new Date().toISOString()
-    };
+  const handleReply = async (activityId: string, content: string) => {
+    if (!currentUserId || currentUserId === 'current-user-id') {
+      setAuthError('User not authenticated. Please log in again.');
+      return;
+    }
 
-    setActivities(prev =>
-      prev.map(activity =>
-        activity.id === activityId
-          ? { ...activity, replies: [...activity.replies, newReply] }
-          : activity
-      )
-    );
+    try {
+      console.log('Replying with userId:', currentUserId); // Debug log
+      await addReply(activityId, {
+        userId: currentUserId,
+        message: content
+      });
+    } catch (err) {
+      console.error('Error adding reply:', err);
+    }
   };
 
-  const handleLike = (activityId: string) => {
-    setActivities(prev =>
-      prev.map(activity =>
-        activity.id === activityId
-          ? { 
-              ...activity, 
-              likes: activity.isLiked ? activity.likes - 1 : activity.likes + 1,
-              isLiked: !activity.isLiked 
-            }
-          : activity
-      )
-    );
+  const handleLike = async (activityId: string) => {
+    if (!currentUserId || currentUserId === 'current-user-id') {
+      setAuthError('User not authenticated. Please log in again.');
+      return;
+    }
+
+    try {
+      console.log('Liking activity with userId:', currentUserId); // Add debug log
+      await likeActivity(activityId, currentUserId); // Pass currentUserId here
+    } catch (err) {
+      console.error('Error liking activity:', err);
+    }
   };
 
-  const handlePin = (activityId: string) => {
-    setActivities(prev =>
-      prev.map(activity =>
-        activity.id === activityId
-          ? { ...activity, isPinned: !activity.isPinned }
-          : activity
-      )
-    );
+  const handlePin = async (activityId: string) => {
+    if (!currentUserId || currentUserId === 'current-user-id') {
+      setAuthError('User not authenticated. Please log in again.');
+      return;
+    }
+
+    try {
+      await pinActivity(activityId);
+    } catch (err) {
+      console.error('Error pinning activity:', err);
+    }
   };
 
-  // Filter activities based on search term
+  const handleRefresh = () => {
+    if (!currentUserId || currentUserId === 'current-user-id') {
+      setAuthError('User not authenticated. Please log in again.');
+      return;
+    }
+    fetchActivities();
+  };
+
+  // Filter activities based on search term (client-side for instant feedback)
   const filteredActivities = activities.filter(activity => {
-    const matchesSearch = activity.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      activity.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (activity.eventName && activity.eventName.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = activity.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      activity.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (activity.event?.title && activity.event.title.toLowerCase().includes(searchTerm.toLowerCase()));
 
     return matchesSearch;
   });
@@ -180,7 +207,9 @@ const TeamActivityContent: React.FC = () => {
       activities: filteredActivities,
       onLike: handleLike,
       onPin: handlePin,
-      onReply: handleReply
+      onReply: handleReply,
+      onDeleteReply: handleDeleteReply,
+      currentUserId: currentUserId // Add this to identify user's own replies
     };
 
     switch (filter) {
@@ -195,6 +224,43 @@ const TeamActivityContent: React.FC = () => {
     }
   };
 
+  // Add handler for delete reply
+    const handleDeleteReply = async (activityId: string, replyId: string) => {
+    if (!currentUserId || currentUserId === 'current-user-id') {
+      setAuthError('User not authenticated. Please log in again.');
+      return;
+    }
+
+    try {
+      console.log('Deleting reply with userId:', currentUserId);
+      await deleteReply(activityId, replyId, currentUserId);
+    } catch (err) {
+      console.error('Error deleting reply:', err);
+    }
+  };
+
+  // Show authentication error if user is not properly authenticated
+  if (authError) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <div className="text-center py-8">
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="text-red-600 font-medium">Authentication Required</div>
+              <div className="text-sm text-red-600 mt-1">{authError}</div>
+            </div>
+            <button 
+              onClick={() => window.location.href = '/login'}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Go to Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -203,8 +269,21 @@ const TeamActivityContent: React.FC = () => {
           <div>
             <h2 className="text-2xl font-bold text-gray-800">Team Activity</h2>
             <p className="text-gray-600 mt-1">Stay connected with your team's latest updates</p>
+            {pagination.totalActivities > 0 && (
+              <p className="text-sm text-gray-500 mt-1">
+                {pagination.totalActivities} total activities
+              </p>
+            )}
           </div>
           <div className="flex space-x-2">
+            <button 
+              onClick={handleRefresh}
+              disabled={loading}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-2 disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+              <span>Refresh</span>
+            </button>
             <button 
               onClick={() => setIsNewActivityModalOpen(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
@@ -215,41 +294,41 @@ const TeamActivityContent: React.FC = () => {
           </div>
         </div>
 
+        {/* Error Display */}
+        {(error || authError) && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="text-sm text-red-600">{error || authError}</div>
+          </div>
+        )}
+
+        {/* User Info Display for Debugging */}
+        {currentUserId && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="text-sm text-blue-600">
+              Current User ID: <code>{currentUserId}</code>
+            </div>
+          </div>
+        )}
+
         {/* Filters and Search */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="flex space-x-2">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              All Activity
-            </button>
-            <button
-              onClick={() => setFilter('comments')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === 'comments' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Comments
-            </button>
-            <button
-              onClick={() => setFilter('events')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === 'events' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Events
-            </button>
-            <button
-              onClick={() => setFilter('mentions')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === 'mentions' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Mentions
-            </button>
+            {[
+              { key: 'all', label: 'All Activity' },
+              { key: 'comments', label: 'Comments' },
+              { key: 'events', label: 'Events' },
+              { key: 'mentions', label: 'Mentions' }
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setFilter(key as FilterType)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  filter === key ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
           
           <div className="relative flex-1 max-w-md">
@@ -263,20 +342,60 @@ const TeamActivityContent: React.FC = () => {
             />
           </div>
         </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-8">
+            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <span className="ml-3 text-gray-600">Loading activities...</span>
+          </div>
+        )}
       </div>
 
       {/* Activity Content - Full Width */}
-      <div>
-        {renderActivitySection()}
-      </div>
+      {!loading && currentUserId && (
+        <div>
+          {renderActivitySection()}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="bg-white p-4 rounded-lg shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Page {pagination.currentPage} of {pagination.totalPages}
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => fetchActivities({ page: pagination.currentPage - 1 })}
+                disabled={!pagination.hasPrev}
+                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => fetchActivities({ page: pagination.currentPage + 1 })}
+                disabled={!pagination.hasNext}
+                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* New Activity Modal */}
-      <NewActivityModal
-        isOpen={isNewActivityModalOpen}
-        onClose={() => setIsNewActivityModalOpen(false)}
-        onSubmit={handleNewActivity}
-        teamMembers={teamMembers}
-      />
+      {currentUserId && (
+        <NewActivityModal
+          isOpen={isNewActivityModalOpen}
+          onClose={() => setIsNewActivityModalOpen(false)}
+          onSubmit={handleNewActivity}
+          teamMembers={teamMembers}
+          currentUserId={currentUserId}
+        />
+      )}
     </div>
   );
 };

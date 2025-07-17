@@ -158,16 +158,26 @@ exports.createActivity = async (req, res) => {
       mentions: []
     };
 
-    // Handle event reference if provided
-    if (eventId) {
-      const event = await Event.findById(eventId);
-      if (event) {
-        activityData.event = {
-          id: event._id,
-          title: event.title,
-          date: event.startDate
-        };
+    // Handle event reference if activity type is 'event'
+    if (type === 'event') {
+      if (!eventId || !mongoose.Types.ObjectId.isValid(eventId)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Valid eventId is required for event activities'
+        });
       }
+      const event = await Event.findById(eventId);
+      if (!event) {
+        return res.status(404).json({
+          success: false,
+          message: 'Event not found'
+        });
+      }
+      activityData.event = {
+        id: event._id,
+        title: event.title,
+        date: event.startDate
+      };
     }
 
     // Handle mentions if provided

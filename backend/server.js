@@ -65,7 +65,7 @@ app.get('/', (req, res) => {
       'DELETE /api/roles/:id',
       'GET /api/roles/permissions',
       'GET /api/roles/stats',
-      'GET /api/activities', // Add these lines
+      'GET /api/activities',
       'POST /api/activities',
       'GET /api/activities/:id',
       'PUT /api/activities/:id',

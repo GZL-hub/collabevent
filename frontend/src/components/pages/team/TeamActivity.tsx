@@ -267,8 +267,7 @@ const TeamActivityContent: React.FC = () => {
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">Team Activity</h2>
-            <p className="text-gray-600 mt-1">Stay connected with your team's latest updates</p>
+            <h2 className="text-gray-800 font-bold">Stay connected with your team's latest updates</h2>
             {pagination.totalActivities > 0 && (
               <p className="text-sm text-gray-500 mt-1">
                 {pagination.totalActivities} total activities

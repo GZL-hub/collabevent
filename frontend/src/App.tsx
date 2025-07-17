@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
-import Login from './components/pages/login/Login';
+import Login from './components/pages/login/components/Login';
 
 // Importing page components
 import DashboardContent from './components/pages/dashboard/DashboardContent';
@@ -29,10 +29,12 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [authLoading, setAuthLoading] = useState(true);
 
   // Check for existing user session on app load
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
+    // Try sessionStorage first, then localStorage
+    const savedUser = sessionStorage.getItem('user') || localStorage.getItem('user');
     if (savedUser) {
       try {
         const user = JSON.parse(savedUser);
@@ -40,16 +42,26 @@ const App: React.FC = () => {
         setIsAuthenticated(true);
       } catch (error) {
         console.error('Error parsing saved user:', error);
+        sessionStorage.removeItem('user');
         localStorage.removeItem('user');
       }
     }
+    setAuthLoading(false);
   }, []);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-  const handleLogin = (user: User) => {
+  const handleLogin = (user: User, rememberMe = false) => {
     setCurrentUser(user);
     setIsAuthenticated(true);
+    // Store in localStorage if rememberMe, else sessionStorage
+    if (rememberMe) {
+      localStorage.setItem('user', JSON.stringify(user));
+      sessionStorage.removeItem('user');
+    } else {
+      sessionStorage.setItem('user', JSON.stringify(user));
+      localStorage.removeItem('user');
+    }
     console.log('User logged in:', user);
   };
 
@@ -57,7 +69,9 @@ const App: React.FC = () => {
     setIsAuthenticated(false);
     setCurrentUser(null);
     setCurrentPage('dashboard');
+    // Remove user from both storages
     localStorage.removeItem('user');
+    sessionStorage.removeItem('user')
   };
 
   const renderContent = () => {
@@ -78,6 +92,11 @@ const App: React.FC = () => {
         return <DashboardContent />;
     }
   };
+
+  // Show nothing which checking auth state
+  if (authLoading) {
+    return null;
+  }
 
   // Show login page if not authenticated
   if (!isAuthenticated) {

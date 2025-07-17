@@ -8,7 +8,7 @@ interface Event {
   id: string;
   name: string;
   date: string;
-  status: 'upcoming' | 'ongoing' | 'completed';
+  status: string;
   description?: string;
 }
 
@@ -36,7 +36,7 @@ const NewActivityModal: React.FC<NewActivityModalProps> = ({
   currentUserId
 }) => {
   const { createActivity, loading, error } = useActivities();
-  
+
   // Form state
   const [activityType, setActivityType] = useState<'comment' | 'event' | 'mention'>('comment');
   const [message, setMessage] = useState('');
@@ -44,7 +44,7 @@ const NewActivityModal: React.FC<NewActivityModalProps> = ({
   const [selectedMentions, setSelectedMentions] = useState<TeamMember[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
-  
+
   // Data state
   const [events, setEvents] = useState<Event[]>([]);
   const [users, setUsers] = useState<TeamMember[]>([]);
@@ -56,52 +56,53 @@ const NewActivityModal: React.FC<NewActivityModalProps> = ({
     if (isOpen) {
       fetchEventsAndUsers();
     }
+    // eslint-disable-next-line
   }, [isOpen]);
 
   const fetchEventsAndUsers = async () => {
     setLoadingData(true);
     setDataError(null);
-    
-    try {
-      // Fetch events using the correct method name
-      const eventsResponse = await EventService.getAllEvents();
-      
-      // Handle different response structures for events
-      if (eventsResponse.success && Array.isArray(eventsResponse.data)) {
-        const formattedEvents = eventsResponse.data.map((event: any) => ({
-          id: event._id,
-          name: event.title,
-          date: new Date(event.startDate).toLocaleDateString(),
-          status: event.status?.toLowerCase() as 'upcoming' | 'ongoing' | 'completed' || 'upcoming',
-          description: event.description
-        }));
-        setEvents(formattedEvents);
-      } else if (Array.isArray(eventsResponse)) {
-        // Handle case where response is directly an array
-        const formattedEvents = eventsResponse.map((event: any) => ({
-          id: event._id,
-          name: event.title,
-          date: new Date(event.startDate).toLocaleDateString(),
-          status: event.status?.toLowerCase() as 'upcoming' | 'ongoing' | 'completed' || 'upcoming',
-          description: event.description
-        }));
-        setEvents(formattedEvents);
-      }
 
-      // Fix: UserService.getUsers() returns User[] directly, not wrapped in response object
-      const usersResponse = await UserService.getUsers();
-      
-      // Handle users response - it's directly an array
-      if (Array.isArray(usersResponse)) {
-        const formattedUsers = usersResponse.map((user: any) => ({
-          id: user._id || user.id,
-          name: `${user.firstName} ${user.lastName}`.trim(),
-          role: user.role || 'Member',
-          avatar: user.avatar,
-          email: user.email
-        }));
-        setUsers(formattedUsers);
+    try {
+      // Fetch events
+      const eventsResponse = await EventService.getAllEvents();
+      let rawEvents: any[] = [];
+      if (eventsResponse && Array.isArray(eventsResponse.data)) {
+        rawEvents = eventsResponse.data;
+      } else if (Array.isArray(eventsResponse)) {
+        rawEvents = eventsResponse;
       }
+      // If your API returns { data: { events: [...] } }
+      else if (eventsResponse && eventsResponse.data && Array.isArray(eventsResponse.data.events)) {
+        rawEvents = eventsResponse.data.events;
+      }
+      console.log('RAW EVENTS:', rawEvents);
+      const formattedEvents: Event[] = rawEvents.map((event: any) => ({
+        id: event._id,
+        name: event.title,
+        date: new Date(event.startDate).toLocaleDateString(),
+        status: event.status?.toLowerCase() || 'upcoming',
+        description: event.description
+      }));
+      console.log('FORMATTED EVENTS:', formattedEvents);
+      setEvents(formattedEvents);
+
+      // Fetch users
+      const usersResponse = await UserService.getUsers();
+      let rawUsers: any[] = [];
+      if (Array.isArray(usersResponse)) {
+        rawUsers = usersResponse;
+      } else if (usersResponse && Array.isArray((usersResponse as any).data)) {
+        rawUsers = (usersResponse as any).data;
+      }
+      const formattedUsers: TeamMember[] = rawUsers.map((user: any) => ({
+        id: user._id || user.id,
+        name: `${user.firstName} ${user.lastName}`.trim(),
+        role: user.role || 'Member',
+        avatar: user.avatar,
+        email: user.email
+      }));
+      setUsers(formattedUsers);
     } catch (err) {
       console.error('Error fetching data:', err);
       setDataError('Failed to load events and users. Please try again.');
@@ -110,27 +111,30 @@ const NewActivityModal: React.FC<NewActivityModalProps> = ({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!message.trim()) return;
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!message.trim()) return;
+      if (activityType === 'event' && !selectedEvent?.id) {
+        setDataError('Please select an event.');
+        return;
+      }
 
     try {
-      const activityData = {
-        type: activityType,
-        message: message.trim(),
-        userId: currentUserId,
-        eventId: selectedEvent?.id,
-        mentions: selectedMentions.map(m => m.id),
-        tags: tags.filter(tag => tag.trim() !== '')
-      };
+    const activityData = {
+      type: activityType,
+      message: message.trim(),
+      userId: currentUserId,
+      eventId: activityType === 'event' ? selectedEvent?.id : undefined,
+      mentions: selectedMentions.map(m => m.id),
+      tags: tags.filter(tag => tag.trim() !== '')
+    };
 
       const newActivity = await createActivity(activityData);
-      
+
       if (onSubmit) {
         onSubmit(newActivity);
       }
-      
+
       handleClose();
     } catch (err) {
       console.error('Error creating activity:', err);
@@ -176,8 +180,6 @@ const NewActivityModal: React.FC<NewActivityModalProps> = ({
       e.preventDefault();
       if (e.currentTarget.id === 'tag-input') {
         addTag();
-      } else {
-        handleSubmit(e);
       }
     }
   };
@@ -233,7 +235,7 @@ const NewActivityModal: React.FC<NewActivityModalProps> = ({
                 { type: 'comment' as const, icon: MessageCircle, label: 'Comment', color: 'blue' },
                 { type: 'event' as const, icon: Calendar, label: 'Event Update', color: 'green' },
                 { type: 'mention' as const, icon: AtSign, label: 'Mention', color: 'purple' }
-              ].map(({ type, icon: Icon, label, color }) => (
+              ].map(({ type, icon: Icon, label }) => (
                 <button
                   key={type}
                   type="button"
@@ -320,7 +322,7 @@ const NewActivityModal: React.FC<NewActivityModalProps> = ({
                       </button>
                     ))}
                   </div>
-                  
+
                   {selectedMentions.length > 0 && (
                     <div className="mt-2">
                       <div className="text-xs text-gray-600 mb-1">Selected members:</div>
@@ -374,7 +376,7 @@ const NewActivityModal: React.FC<NewActivityModalProps> = ({
                 <Plus size={16} />
               </button>
             </div>
-            
+
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {tags.map((tag, index) => (
@@ -422,31 +424,36 @@ const NewActivityModal: React.FC<NewActivityModalProps> = ({
               </div>
             </div>
           )}
-        </form>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Cancel
-          </button>
-          
-          <button
-            onClick={handleSubmit}
-            disabled={!message.trim() || loading || loadingData}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-          >
-            {loading ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Send size={16} />
-            )}
-            <span>{loading ? 'Posting...' : 'Post Activity'}</span>
-          </button>
-        </div>
+          {/* Footer buttons INSIDE the form */}
+          <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={
+                !message.trim() ||
+                loading ||
+                loadingData ||
+                (activityType === 'event' && !selectedEvent?.id)
+              }
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            >
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Send size={16} />
+              )}
+              <span>{loading ? 'Posting...' : 'Post Activity'}</span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

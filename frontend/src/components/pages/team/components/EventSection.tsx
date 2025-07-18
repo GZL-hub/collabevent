@@ -38,7 +38,7 @@ const EventSection: React.FC<EventSectionProps> = ({
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h4 className="text-md font-semibold text-gray-800 mb-4">Recent Event Activity</h4>
         <ActivityFeed
-          activities={activities.filter(a => a.type === 'comment')}
+          activities={eventActivities}
           onLike={onLike}
           onPin={onPin}
           onReply={onReply}

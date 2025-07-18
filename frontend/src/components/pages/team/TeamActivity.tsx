@@ -115,28 +115,28 @@ const TeamActivityContent: React.FC = () => {
   };
 
   const handleNewActivity = async (activityData: {
-    type: 'comment' | 'event' | 'mention';
+    type: 'comment' | 'event';
     message: string;
     eventId?: string;
     mentions?: string[];
     tags?: string[];
   }) => {
-    if (!currentUserId || currentUserId === 'current-user-id') {
+    if (!currentUserId) {
       setAuthError('User not authenticated. Please log in again.');
       return;
     }
 
     try {
+      // The parent component adds the userId and calls the hook
       await createActivity({
-        type: activityData.type,
-        message: activityData.message,
+        ...activityData, // Spread the data from the modal
         userId: currentUserId,
-        eventId: activityData.eventId,
-        mentions: activityData.mentions,
-        tags: activityData.tags
       });
+      // Close the modal on successful submission
+      setIsNewActivityModalOpen(false);
     } catch (err) {
-      console.error('Error creating activity:', err);
+      console.error('Error creating new activity:', err);
+      // The error state is already managed by the `useActivities` hook
     }
   };
 
@@ -385,14 +385,15 @@ const TeamActivityContent: React.FC = () => {
         </div>
       )}
 
-      {/* New Activity Modal */}
+      {/* Pass loading and error props to the modal */}
       {currentUserId && (
         <NewActivityModal
           isOpen={isNewActivityModalOpen}
           onClose={() => setIsNewActivityModalOpen(false)}
           onSubmit={handleNewActivity}
-          teamMembers={teamMembers}
           currentUserId={currentUserId}
+          loading={loading}
+          error={error}
         />
       )}
     </div>

@@ -8,6 +8,7 @@ interface MentionSectionProps {
   onLike: (activityId: string) => void;
   onPin: (activityId: string) => void;
   onReply: (activityId: string, content: string) => void;
+  onDelete: (activityId: string) => void;
   onDeleteReply?: (activityId: string, replyId: string) => void;
   currentUserId?: string;
 }
@@ -16,6 +17,7 @@ const MentionSection: React.FC<MentionSectionProps> = ({
   activities,
   onLike,
   onPin,
+  onDelete,
   onDeleteReply,
   currentUserId,
   onReply
@@ -35,6 +37,7 @@ const MentionSection: React.FC<MentionSectionProps> = ({
           onLike={onLike}
           onPin={onPin}
           onReply={onReply}
+          onDelete={onDelete}
           onDeleteReply={onDeleteReply}
           currentUserId={currentUserId}
           replyingTo={replyingTo}

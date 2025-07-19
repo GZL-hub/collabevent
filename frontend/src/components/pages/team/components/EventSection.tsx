@@ -8,6 +8,7 @@ interface EventSectionProps {
   onLike: (activityId: string) => void;
   onPin: (activityId: string) => void;
   onReply: (activityId: string, content: string) => void;
+  onDelete: (activityId: string) => void;
   onDeleteReply?: (activityId: string, replyId: string) => void;
   currentUserId?: string;
 }
@@ -18,7 +19,8 @@ const EventSection: React.FC<EventSectionProps> = ({
   onPin,
   onDeleteReply,
   currentUserId,
-  onReply
+  onReply,
+  onDelete
 }) => {
   const [replyingTo, setReplyingTo] = React.useState<string | null>(null);
   const [replyContent, setReplyContent] = React.useState('');
@@ -42,6 +44,7 @@ const EventSection: React.FC<EventSectionProps> = ({
           onLike={onLike}
           onPin={onPin}
           onReply={onReply}
+          onDelete={onDelete}
           onDeleteReply={onDeleteReply}
           currentUserId={currentUserId}
           replyingTo={replyingTo}

@@ -8,6 +8,7 @@ interface ActivityFeedProps {
   onLike: (activityId: string) => void;
   onPin: (activityId: string) => void;
   onReply: (activityId: string, content: string) => void;
+  onDelete?: (activityId: string) => void;
   onDeleteReply?: (activityId: string, replyId: string) => void;
   currentUserId?: string;
   replyingTo: string | null;
@@ -21,6 +22,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
   onLike,
   onPin,
   onReply,
+  onDelete, // Add this prop
   replyingTo,
   setReplyingTo,
   replyContent,
@@ -47,6 +49,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
           onLike={onLike}
           onPin={onPin}
           onReply={onReply}
+          onDelete={onDelete}
           onDeleteReply={onDeleteReply}
           currentUserId={currentUserId}
           replyingTo={replyingTo}

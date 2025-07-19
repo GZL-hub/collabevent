@@ -119,6 +119,8 @@ class ActivityService {
     message: string;
     data: Activity;
   }> {
+    console.log('ActivityService.deleteActivity called with:', { id });
+    
     return this.fetchWithAuth(`/api/activities/${id}`, {
       method: 'DELETE',
     });

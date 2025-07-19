@@ -105,10 +105,10 @@ const Header: React.FC<HeaderProps> = ({ currentPage, toggleSidebar, onLogout, c
             
             <ChevronDown size={16} className={`text-gray-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
           </button>
-          
+                    
           {/* Dropdown Menu */}
           {showUserMenu && (
-            <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+            <div className="absolute right-0 top-full mt-2 w-72 min-w-[18rem] bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
               {/* User Info in Dropdown */}
               <div className="px-4 py-3 border-b border-gray-100">
                 <div className="flex items-center space-x-3">
@@ -123,11 +123,11 @@ const Header: React.FC<HeaderProps> = ({ currentPage, toggleSidebar, onLogout, c
                       getUserInitials()
                     )}
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">
                       {getUserDisplayName()}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 truncate">
                       {currentUser?.email}
                     </p>
                     <div className="flex items-center space-x-2 mt-1">
@@ -137,7 +137,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, toggleSidebar, onLogout, c
                       {currentUser?.department && (
                         <>
                           <span className="text-xs text-gray-300">•</span>
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-gray-400 truncate">
                             {currentUser.department}
                           </span>
                         </>

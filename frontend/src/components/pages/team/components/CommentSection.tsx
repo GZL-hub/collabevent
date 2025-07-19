@@ -8,6 +8,7 @@ interface CommentSectionProps {
   onLike: (activityId: string) => void;
   onPin: (activityId: string) => void;
   onReply: (activityId: string, content: string) => void;
+  onDelete: (activityId: string) => void;
   onDeleteReply?: (activityId: string, replyId: string) => void;
   currentUserId?: string;
   onAddComment: (content: string) => void;
@@ -20,7 +21,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({
   onReply,
   onDeleteReply,
   currentUserId,
-  onAddComment
+  onAddComment,
+  onDelete
 }) => {
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -42,6 +44,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
           activities={activities.filter(a => a.type === 'comment')}
           onLike={onLike}
           onPin={onPin}
+          onDelete={onDelete}
           onReply={onReply}
           onDeleteReply={onDeleteReply}
           currentUserId={currentUserId}

@@ -201,28 +201,29 @@ const TeamActivityContent: React.FC = () => {
     return matchesSearch;
   });
 
-  // Render appropriate section based on filter
-  const renderActivitySection = () => {
-    const commonProps = {
-      activities: filteredActivities,
-      onLike: handleLike,
-      onPin: handlePin,
-      onReply: handleReply,
-      onDeleteReply: handleDeleteReply,
-      currentUserId: currentUserId // Add this to identify user's own replies
-    };
-
-    switch (filter) {
-      case 'comments':
-        return <CommentSection {...commonProps} onAddComment={handleAddComment} />;
-      case 'events':
-        return <EventSection {...commonProps} />;
-      case 'mentions':
-        return <MentionSection {...commonProps} />;
-      default:
-        return <AllActivitySection {...commonProps} />;
-    }
+// Render appropriate section based on filter
+const renderActivitySection = () => {
+  const commonProps = {
+    activities: filteredActivities,
+    onLike: handleLike,
+    onPin: handlePin,
+    onReply: handleReply,
+    onDeleteReply: handleDeleteReply,
+    onDelete: handleDeleteActivity, // Add this line to include the delete handler
+    currentUserId: currentUserId
   };
+
+  switch (filter) {
+    case 'comments':
+      return <CommentSection {...commonProps} onAddComment={handleAddComment} />;
+    case 'events':
+      return <EventSection {...commonProps} />;
+    case 'mentions':
+      return <MentionSection {...commonProps} />;
+    default:
+      return <AllActivitySection {...commonProps} />;
+  }
+};
 
   // Add handler for delete reply
     const handleDeleteReply = async (activityId: string, replyId: string) => {
@@ -236,6 +237,17 @@ const TeamActivityContent: React.FC = () => {
       await deleteReply(activityId, replyId, currentUserId);
     } catch (err) {
       console.error('Error deleting reply:', err);
+    }
+  };
+
+  // Add a handler for delete
+  const handleDeleteActivity = async (activityId: string) => {
+    try {
+      await deleteActivity(activityId);
+      // Optional: Show a success message
+    } catch (error) {
+      // Error handling is done in the hook
+      console.error('Error in component when deleting activity:', error);
     }
   };
 

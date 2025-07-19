@@ -14,82 +14,84 @@ export const useActivities = () => {
     hasPrev: false,
   });
 
-// Transform backend activity to frontend format
-const transformActivity = useCallback((activity: any): Activity => {
-  const activityId = activity._id || activity.id || '';
-  
-  // ✅ FIX: Calculate isLiked based on current user in likedBy array
-  const getCurrentUserId = () => {
-    const storedUserId = localStorage.getItem('userId');
-    if (storedUserId && storedUserId !== 'current-user-id') {
-      return storedUserId;
-    }
-    const token = localStorage.getItem('token') || localStorage.getItem('authToken');
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload.userId || payload.id || payload.sub;
-      } catch (err) {
-        console.error('Error decoding token:', err);
+  // Transform backend activity to frontend format
+  const transformActivity = useCallback((activity: any): Activity => {
+    const activityId = activity._id || activity.id || '';
+
+    // ✅ FIX: Find the user ID from multiple possible fields on the raw activity object.
+    // This makes the ID resolution more robust.
+    const activityOwnerId = activity.user?._id || activity.user?.id || activity.userId || '';
+
+    const getCurrentUserId = () => {
+      const storedUserId = localStorage.getItem('userId');
+      if (storedUserId && storedUserId !== 'current-user-id') {
+        return storedUserId;
       }
-    }
-    return '68774c5d303caa8b867ae00c'; // Fallback for testing
-  };
-  
-  const currentUserId = getCurrentUserId();
-  const likedByArray = activity.likedBy || [];
-  
-  // ✅ Calculate isLiked correctly
-  const isLiked = likedByArray.some((userId: string) => userId === currentUserId);
-  
-  console.log('Transform activity debug:', {
-    activityId: activityId.slice(-6),
-    currentUserId: currentUserId?.slice(-6),
-    likedByArray: likedByArray.map((id: string) => id.slice(-6)),
-    backendIsLiked: activity.isLiked,
-    calculatedIsLiked: isLiked, // ✅ Add this debug
-    likes: activity.likes
-  });
-  
-  return {
-    _id: activityId,
-    id: activityId,
-    type: activity.type || 'comment',
-    message: activity.message || '',
-    user: {
-      _id: activity.user?._id || activity.user?.id || '',
-      id: activity.user?._id || activity.user?.id || '',
-      name: activity.user?.name || 'Unknown User',
-      email: activity.user?.email || '',
-      avatarColor: activity.user?.avatarColor || 'blue',
-      initials: activity.user?.initials || activity.user?.name?.split(' ').map((n: string) => n[0]).join('') || 'U'
-    },
-    createdAt: activity.createdAt || activity.timestamp || new Date().toISOString(),
-    likes: activity.likes || 0,
-    likedBy: likedByArray,
-    isLiked: isLiked, // ✅ FIX: Use calculated value instead of activity.isLiked || false
-    isPinned: activity.isPinned || false,
-    replies: (activity.replies || []).map((reply: any) => {
-      const replyId = reply._id || reply.id || `reply-${Date.now()}`;
-      return {
-        _id: replyId,
-        id: replyId,
-        userId: reply.userId || reply.user?._id || '',
-        userName: reply.userName || reply.user?.name || 'Unknown User',
-        message: reply.message || reply.content || '',
-        timestamp: reply.timestamp || reply.createdAt || new Date().toISOString()
-      };
-    }),
-    event: activity.event ? {
-      _id: activity.event._id || activity.event.id || '',
-      id: activity.event._id || activity.event.id || '',
-      title: activity.event.title || 'Untitled Event',
-      date: activity.event.date || new Date().toISOString()
-    } : undefined,
-    mentions: activity.mentions || [],
-    tags: activity.tags || []
-  };
-}, []);
+      const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          return payload.userId || payload.id || payload.sub;
+        } catch (err) {
+          console.error('Error decoding token:', err);
+        }
+      }
+      return '68774c5d303caa8b867ae00c'; // Fallback for testing
+    };
+
+    const currentUserId = getCurrentUserId();
+    const likedByArray = activity.likedBy || [];
+    const isLiked = likedByArray.some((userId: string) => userId === currentUserId);
+
+    // Helpful debug log to see what the transformation is producing
+    console.log('Transforming Activity:', {
+        activityId: activityId.slice(-6),
+        resolvedOwnerId: activityOwnerId,
+        rawActivityUser: activity.user,
+        rawActivityUserId: activity.userId,
+    });
+
+    return {
+      _id: activityId,
+      id: activityId,
+      type: activity.type || 'comment',
+      message: activity.message || '',
+      user: {
+        // ✅ FIX: Use the resolved owner ID here. This ensures the ActivityItem
+        // gets the correct ID for the ownership check.
+        _id: activityOwnerId,
+        id: activityOwnerId,
+        name: activity.user?.name || 'Unknown User',
+        email: activity.user?.email || '',
+        avatarColor: activity.user?.avatarColor || 'blue',
+        initials: activity.user?.initials || activity.user?.name?.split(' ').map((n: string) => n[0]).join('') || 'U'
+      },
+      createdAt: activity.createdAt || activity.timestamp || new Date().toISOString(),
+      likes: activity.likes || 0,
+      likedBy: likedByArray,
+      isLiked: isLiked,
+      isPinned: activity.isPinned || false,
+      replies: (activity.replies || []).map((reply: any) => {
+        const replyId = reply._id || reply.id || `reply-${Date.now()}`;
+        return {
+          _id: replyId,
+          id: replyId,
+          userId: reply.userId || reply.user?._id || '',
+          userName: reply.userName || reply.user?.name || 'Unknown User',
+          message: reply.message || reply.content || '',
+          timestamp: reply.timestamp || reply.createdAt || new Date().toISOString()
+        };
+      }),
+      event: activity.event ? {
+        _id: activity.event._id || activity.event.id || '',
+        id: activity.event._id || activity.event.id || '',
+        title: activity.event.title || 'Untitled Event',
+        date: activity.event.date || new Date().toISOString()
+      } : undefined,
+      mentions: activity.mentions || [],
+      tags: activity.tags || []
+    };
+  }, []);
 
   // Fetch activities
   const fetchActivities = useCallback(async (params?: {
@@ -142,9 +144,7 @@ const transformActivity = useCallback((activity: any): Activity => {
     try {
         setError(null);
         
-        // Get current user ID - same logic as in your TeamActivity component
         const getUserId = () => {
-        // Use passed userId first, then fallback to stored/token
         if (userId && userId !== 'current-user-id') {
             return userId;
         }
@@ -166,7 +166,6 @@ const transformActivity = useCallback((activity: any): Activity => {
         };
         
         const currentUserId = getUserId();
-        console.log('Liking activity with userId:', currentUserId);
         
         if (!currentUserId || currentUserId === 'current-user-id') {
         throw new Error('Valid user ID is required');
@@ -179,7 +178,6 @@ const transformActivity = useCallback((activity: any): Activity => {
         setActivities(prev =>
             prev.map(a => a._id === activityId ? transformedActivity : a)
         );
-        console.log('Activity like status updated:', response.isLiked);
         }
     } catch (err) {
         console.error('Error liking activity:', err);
@@ -198,7 +196,6 @@ const transformActivity = useCallback((activity: any): Activity => {
 
       const newPinnedState = !activity.isPinned;
       
-      // Optimistic update
       setActivities(prev =>
         prev.map(a =>
           a._id === activityId ? { ...a, isPinned: newPinnedState } : a
@@ -214,7 +211,6 @@ const transformActivity = useCallback((activity: any): Activity => {
         );
       }
     } catch (err) {
-      // Revert optimistic update on error
       setActivities(prev =>
         prev.map(a =>
           a._id === activityId ? { ...a, isPinned: !a.isPinned } : a
@@ -252,11 +248,21 @@ const transformActivity = useCallback((activity: any): Activity => {
   // Delete activity
   const deleteActivity = useCallback(async (activityId: string) => {
     try {
+      setLoading(true);
       setError(null);
       
-      await ActivityService.deleteActivity(activityId);
-      setActivities(prev => prev.filter(a => a._id !== activityId));
+      const response = await ActivityService.deleteActivity(activityId);
+      
+      if (response.success) {
+        setActivities(prev => prev.filter(activity => 
+          (activity._id !== activityId && activity.id !== activityId)
+        ));
+        console.log('Activity deleted successfully');
+      }
+      
+      setLoading(false);
     } catch (err) {
+      setLoading(false);
       setError(err instanceof Error ? err.message : 'Failed to delete activity');
       console.error('Error deleting activity:', err);
       throw err;
@@ -267,8 +273,6 @@ const transformActivity = useCallback((activity: any): Activity => {
     const deleteReply = useCallback(async (activityId: string, replyId: string, userId: string) => {
     try {
         setError(null);
-        
-        console.log('Deleting reply:', { activityId, replyId, userId });
         
         const response = await ActivityService.deleteReply(activityId, replyId, userId);
         

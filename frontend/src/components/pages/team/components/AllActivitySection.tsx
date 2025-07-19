@@ -8,6 +8,7 @@ interface AllActivitySectionProps {
   onLike: (activityId: string) => void;
   onPin: (activityId: string) => void;
   onReply: (activityId: string, content: string) => void;
+  onDelete: (activityId: string) => void; 
   onDeleteReply?: (activityId: string, replyId: string) => void;
   currentUserId?: string;
 }
@@ -18,6 +19,7 @@ const AllActivitySection: React.FC<AllActivitySectionProps> = ({
   onPin,
   onReply,
   onDeleteReply,
+  onDelete,
   currentUserId
 }) => {
   const [replyingTo, setReplyingTo] = React.useState<string | null>(null);
@@ -40,6 +42,7 @@ const AllActivitySection: React.FC<AllActivitySectionProps> = ({
           onLike={onLike}
           onPin={onPin}
           onReply={onReply}
+          onDelete={onDelete}
           onDeleteReply={onDeleteReply}
           currentUserId={currentUserId}
           replyingTo={replyingTo}

@@ -6,7 +6,7 @@ import Login from './components/pages/login/components/Login';
 // Importing page components
 import DashboardContent from './components/pages/dashboard/DashboardContent';
 import EventsContent from './components/pages/event/EventsContent';
-import CalendarContent from './components/Pages/CalendarContent';
+import CalendarContent from './components/pages/calendar/CalendarContent';
 import NotificationsContent from './components/Pages/NotificationsContent';
 import TeamActivityContent from './components/pages/team/TeamActivity';
 import SettingsContent from './components/pages/settings/SettingsContent';

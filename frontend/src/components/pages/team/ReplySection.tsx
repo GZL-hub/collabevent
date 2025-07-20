@@ -1,6 +1,7 @@
-import React from 'react';
-import { Trash2, Send } from 'lucide-react';
+import React, { useState } from 'react';
+import { Trash2, Send, Reply } from 'lucide-react';
 import { Activity } from './types';
+import DeleteModal from './components/DeleteComponent';
 
 interface ReplySectionProps {
   activity: Activity;
@@ -23,6 +24,10 @@ const ReplySection: React.FC<ReplySectionProps> = ({
   onDeleteReply,
   currentUserId
 }) => {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [replyToDelete, setReplyToDelete] = useState<string | null>(null);
+  const [isDeletingReply, setIsDeletingReply] = useState(false);
+
   const activityId = activity._id || activity.id || '';
   
   const handleReply = () => {
@@ -40,23 +45,41 @@ const ReplySection: React.FC<ReplySectionProps> = ({
     }
   };
 
-  // THIS IS THE MISSING DELETE FUNCTION IMPLEMENTATION
-  const handleDeleteReply = async (replyId: string) => {
-    if (!onDeleteReply) {
-      console.log('Delete function not available');
+  // ✅ Updated delete function with modal
+  const handleDeleteClick = (replyId: string) => {
+    setReplyToDelete(replyId);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!onDeleteReply || !replyToDelete) {
       return;
     }
     
-    const confirmed = window.confirm('Are you sure you want to delete this reply?');
-    if (!confirmed) return;
+    if (!currentUserId) {
+      console.log('❌ Current user ID not available');
+      return;
+    }
     
     try {
-      await onDeleteReply(activityId, replyId);
-      console.log('Reply deleted successfully');
+      setIsDeletingReply(true);
+      console.log('🗑️ Deleting reply:', { activityId, replyId: replyToDelete, currentUserId });
+      await onDeleteReply(activityId, replyToDelete);
+      console.log('✅ Reply deleted successfully');
+      setShowDeleteModal(false);
+      setReplyToDelete(null);
+      // Notification will be handled by parent component
     } catch (err) {
-      console.error('Error deleting reply:', err);
-      alert('Failed to delete reply. Please try again.');
+      console.error('❌ Error deleting reply:', err);
+      setIsDeletingReply(false);
+      // Error notification will be handled by parent component
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+    setReplyToDelete(null);
+    setIsDeletingReply(false);
   };
 
   return (
@@ -67,6 +90,14 @@ const ReplySection: React.FC<ReplySectionProps> = ({
           {activity.replies.map((reply) => {
             const replyId = reply._id || reply.id || `reply-${Date.now()}`;
             const isOwnReply = currentUserId && reply.userId === currentUserId;
+            
+            console.log('🔍 Reply check:', {
+              replyId: replyId.slice(-6),
+              currentUserId: currentUserId?.slice(-6),
+              replyUserId: reply.userId?.slice(-6),
+              isOwnReply,
+              hasDeleteFunction: !!onDeleteReply
+            });
             
             return (
               <div key={replyId} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
@@ -94,10 +125,10 @@ const ReplySection: React.FC<ReplySectionProps> = ({
                       )}
                     </div>
                     
-                    {/* THIS IS THE ACTUAL DELETE BUTTON IMPLEMENTATION */}
+                    {/* ✅ Updated Delete Button with Modal */}
                     {isOwnReply && onDeleteReply && (
                       <button
-                        onClick={() => handleDeleteReply(replyId)}
+                        onClick={() => handleDeleteClick(replyId)}
                         className="flex items-center justify-center w-6 h-6 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                         title="Delete your reply"
                       >
@@ -151,11 +182,22 @@ const ReplySection: React.FC<ReplySectionProps> = ({
       ) : (
         <button
           onClick={() => setReplyingTo(activityId)}
-          className="mt-3 text-sm text-blue-600 hover:text-blue-700 transition-colors"
+          className="mt-3 flex items-center text-sm text-gray-500 hover:text-gray-700 transition-colors"
         >
-          💬 Reply to this activity
+          <Reply size={14} className="mr-1" />
+          Reply
         </button>
       )}
+
+      {/* ✅ Delete Reply Modal */}
+      <DeleteModal
+        isOpen={showDeleteModal}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Reply"
+        message="Are you sure you want to delete this reply? This action cannot be undone."
+        isDeleting={isDeletingReply}
+      />
     </>
   );
 };

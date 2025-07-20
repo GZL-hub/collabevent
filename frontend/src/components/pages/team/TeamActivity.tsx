@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Search, Plus, RefreshCw } from 'lucide-react';
 import { Activity, TeamMember, FilterType } from './types';
 import { useActivities } from './hook/activityHook';
+import Notification, {NotificationType} from './components/Notifications';
 
 // Import modular components
 import AllActivitySection from './components/AllActivitySection';
@@ -31,6 +32,17 @@ const TeamActivityContent: React.FC = () => {
   const [isNewActivityModalOpen, setIsNewActivityModalOpen] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [authError, setAuthError] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{
+    type: NotificationType;
+    title: string;
+    message?: string;
+    isVisible: boolean;
+  }>({
+    type: 'info',
+    title: '',
+    message: '',
+    isVisible: false
+  });
 
   // Initialize data on component mount
   useEffect(() => {
@@ -39,7 +51,6 @@ const TeamActivityContent: React.FC = () => {
       // Option 1: From localStorage (if stored during login)
       const storedUserId = localStorage.getItem('userId');
       if (storedUserId && storedUserId !== 'current-user-id') {
-        console.log('Found userId in localStorage:', storedUserId);
         return storedUserId;
       }
 
@@ -50,7 +61,6 @@ const TeamActivityContent: React.FC = () => {
           const user = JSON.parse(storedUser);
           const userId = user._id || user.id;
           if (userId) {
-            console.log('Found userId in stored user object:', userId);
             return userId;
           }
         } catch (err) {
@@ -66,7 +76,6 @@ const TeamActivityContent: React.FC = () => {
           const payload = JSON.parse(atob(token.split('.')[1]));
           const userId = payload.userId || payload.id || payload.sub;
           if (userId) {
-            console.log('Found userId in token:', userId);
             return userId;
           }
         } catch (err) {
@@ -75,11 +84,10 @@ const TeamActivityContent: React.FC = () => {
       }
 
       console.error('No valid user ID found in any storage location');
-      return null; // Return null instead of hardcoded ID
+      return null;
     };
 
     const userId = getUserId();
-    console.log('Current user ID:', userId);
     
     if (!userId) {
       setAuthError('User not authenticated. Please log in again.');
@@ -114,6 +122,33 @@ const TeamActivityContent: React.FC = () => {
     fetchActivities(params);
   }, [filter, searchTerm, fetchActivities, currentUserId]);
 
+  // Function to show notifications
+  const showNotification = useCallback((type: NotificationType, title: string, message?: string) => {
+    setNotification({
+      type,
+      title,
+      message,
+      isVisible: true
+    });
+  }, []);
+
+  // Function to hide notifications
+  const hideNotification = useCallback(() => {
+    setNotification(prev => ({ ...prev, isVisible: false }));
+  }, []);
+
+  // Delete handler with notifications
+  const handleDeleteActivity = useCallback(async (activityId: string) => {
+    try {
+      await deleteActivity(activityId);
+      showNotification('success', 'Post Deleted', 'The post has been successfully deleted.');
+    } catch (err) {
+      console.error('Error deleting activity:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete activity';
+      showNotification('error', 'Delete Failed', errorMessage);
+    }
+  }, [deleteActivity, showNotification]);
+
   // Event handlers
   const handleAddComment = async (content: string) => {
     if (!currentUserId || currentUserId === 'current-user-id') {
@@ -128,8 +163,11 @@ const TeamActivityContent: React.FC = () => {
         userId: currentUserId,
         tags: []
       });
+      showNotification('success', 'Comment Added', 'Your comment has been posted successfully.');
     } catch (err) {
       console.error('Error creating comment:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to add comment. Please try again.';
+      showNotification('error', 'Comment Failed', errorMessage);
     }
   };
 
@@ -146,16 +184,19 @@ const TeamActivityContent: React.FC = () => {
     }
 
     try {
-      // The parent component adds the userId and calls the hook
       await createActivity({
-        ...activityData, // Spread the data from the modal
+        ...activityData,
         userId: currentUserId,
       });
-      // Close the modal on successful submission
+      
+      const activityTypeLabel = activityData.type === 'event' ? 'Event' : 'Post';
+      showNotification('success', `${activityTypeLabel} Created`, `Your ${activityTypeLabel.toLowerCase()} has been successfully posted.`);
+      
       setIsNewActivityModalOpen(false);
     } catch (err) {
       console.error('Error creating new activity:', err);
-      // The error state is already managed by the `useActivities` hook
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create activity. Please try again.';
+      showNotification('error', 'Create Failed', errorMessage);
     }
   };
 
@@ -166,13 +207,15 @@ const TeamActivityContent: React.FC = () => {
     }
 
     try {
-      console.log('Replying with userId:', currentUserId); // Debug log
       await addReply(activityId, {
         userId: currentUserId,
         message: content
       });
+      showNotification('success', 'Reply Added', 'Your reply has been posted successfully.');
     } catch (err) {
       console.error('Error adding reply:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to add reply. Please try again.';
+      showNotification('error', 'Reply Failed', errorMessage);
     }
   };
 
@@ -183,10 +226,12 @@ const TeamActivityContent: React.FC = () => {
     }
 
     try {
-      console.log('Liking activity with userId:', currentUserId); // Add debug log
-      await likeActivity(activityId, currentUserId); // Pass currentUserId here
+      await likeActivity(activityId, currentUserId);
+      // No notification for likes to avoid spam
     } catch (err) {
       console.error('Error liking activity:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to like activity. Please try again.';
+      showNotification('error', 'Like Failed', errorMessage);
     }
   };
 
@@ -198,8 +243,11 @@ const TeamActivityContent: React.FC = () => {
 
     try {
       await pinActivity(activityId);
+      showNotification('success', 'Activity Pinned', 'Activity has been pinned successfully.');
     } catch (err) {
       console.error('Error pinning activity:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to pin activity. Please try again.';
+      showNotification('error', 'Pin Failed', errorMessage);
     }
   };
 
@@ -211,6 +259,22 @@ const TeamActivityContent: React.FC = () => {
     fetchActivities();
   };
 
+  const handleDeleteReply = async (activityId: string, replyId: string) => {
+    if (!currentUserId || currentUserId === 'current-user-id') {
+      setAuthError('User not authenticated. Please log in again.');
+      return;
+    }
+
+    try {
+      await deleteReply(activityId, replyId, currentUserId);
+      showNotification('success', 'Reply Deleted', 'Reply has been successfully deleted.');
+    } catch (err) {
+      console.error('Error deleting reply:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete reply. Please try again.';
+      showNotification('error', 'Delete Failed', errorMessage);
+    }
+  };
+
   // Filter activities based on search term (client-side for instant feedback)
   const filteredActivities = activities.filter(activity => {
     const matchesSearch = activity.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -220,53 +284,27 @@ const TeamActivityContent: React.FC = () => {
     return matchesSearch;
   });
 
-// Render appropriate section based on filter
-const renderActivitySection = () => {
-  const commonProps = {
-    activities: filteredActivities,
-    onLike: handleLike,
-    onPin: handlePin,
-    onReply: handleReply,
-    onDeleteReply: handleDeleteReply,
-    onDelete: handleDeleteActivity, // Add this line to include the delete handler
-    currentUserId: currentUserId
-  };
+  // Render appropriate section based on filter
+  const renderActivitySection = () => {
+    const commonProps = {
+      activities: filteredActivities,
+      onLike: handleLike,
+      onPin: handlePin,
+      onReply: handleReply,
+      onDeleteReply: handleDeleteReply,
+      onDelete: handleDeleteActivity,
+      currentUserId: currentUserId
+    };
 
-  switch (filter) {
-    case 'comments':
-      return <CommentSection {...commonProps} onAddComment={handleAddComment} />;
-    case 'events':
-      return <EventSection {...commonProps} />;
-    case 'mentions':
-      return <MentionSection {...commonProps} />;
-    default:
-      return <AllActivitySection {...commonProps} />;
-  }
-};
-
-  // Add handler for delete reply
-    const handleDeleteReply = async (activityId: string, replyId: string) => {
-    if (!currentUserId || currentUserId === 'current-user-id') {
-      setAuthError('User not authenticated. Please log in again.');
-      return;
-    }
-
-    try {
-      console.log('Deleting reply with userId:', currentUserId);
-      await deleteReply(activityId, replyId, currentUserId);
-    } catch (err) {
-      console.error('Error deleting reply:', err);
-    }
-  };
-
-  // Add a handler for delete
-  const handleDeleteActivity = async (activityId: string) => {
-    try {
-      await deleteActivity(activityId);
-      // Optional: Show a success message
-    } catch (error) {
-      // Error handling is done in the hook
-      console.error('Error in component when deleting activity:', error);
+    switch (filter) {
+      case 'comments':
+        return <CommentSection {...commonProps} onAddComment={handleAddComment} />;
+      case 'events':
+        return <EventSection {...commonProps} />;
+      case 'mentions':
+        return <MentionSection {...commonProps} />;
+      default:
+        return <AllActivitySection {...commonProps} />;
     }
   };
 
@@ -328,15 +366,6 @@ const renderActivitySection = () => {
         {(error || authError) && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
             <div className="text-sm text-red-600">{error || authError}</div>
-          </div>
-        )}
-
-        {/* User Info Display for Debugging */}
-        {currentUserId && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="text-sm text-blue-600">
-              Current User ID: <code>{currentUserId}</code>
-            </div>
           </div>
         )}
 
@@ -416,7 +445,7 @@ const renderActivitySection = () => {
         </div>
       )}
 
-      {/* Pass loading and error props to the modal */}
+      {/* New Activity Modal */}
       {currentUserId && (
         <NewActivityModal
           isOpen={isNewActivityModalOpen}
@@ -427,6 +456,15 @@ const renderActivitySection = () => {
           error={error}
         />
       )}
+
+      {/* Notification Component */}
+      <Notification
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        isVisible={notification.isVisible}
+        onClose={hideNotification}
+      />
     </div>
   );
 };

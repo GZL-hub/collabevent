@@ -60,9 +60,24 @@ const NewActivityModal: React.FC<NewActivityModalProps> = ({
   // Determine activity type based on selection
   const activityType = selectedEvent ? 'event' : 'comment';
 
+  // --- RESET FORM FUNCTION ---
+  const resetForm = () => {
+    setMessage('');
+    setSelectedEvent(null);
+    setSelectedMentions([]);
+    setTags([]);
+    setNewTag('');
+    setDataError(null);
+    setActiveTab(null);
+  };
+
   // --- FETCH DATA ---
   useEffect(() => {
-    if (isOpen) fetchEventsAndUsers();
+    if (isOpen) {
+      // Reset form when modal opens
+      resetForm();
+      fetchEventsAndUsers();
+    }
   }, [isOpen]);
 
   const fetchEventsAndUsers = async () => {
@@ -99,17 +114,11 @@ const NewActivityModal: React.FC<NewActivityModalProps> = ({
 
   // --- HANDLERS ---
   const handleClose = () => {
-    setMessage('');
-    setSelectedEvent(null);
-    setSelectedMentions([]);
-    setTags([]);
-    setNewTag('');
-    setDataError(null);
-    setActiveTab(null);
+    resetForm();
     onClose();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
     
@@ -127,7 +136,17 @@ const NewActivityModal: React.FC<NewActivityModalProps> = ({
       tags: tags.filter(tag => tag.trim() !== ''),
     };
     
-    if (onSubmit) onSubmit(activityData);
+    try {
+      // Call the parent's onSubmit function
+      if (onSubmit) {
+        await onSubmit(activityData);
+        // Reset form only on successful submission
+        resetForm();
+      }
+    } catch (err) {
+      // Error will be handled by parent component
+      console.error('Error submitting activity:', err);
+    }
   };
 
   const handleMentionToggle = (member: TeamMember) => {
@@ -156,6 +175,21 @@ const NewActivityModal: React.FC<NewActivityModalProps> = ({
       setActiveTab(tab);
     }
   };
+
+  // --- EFFECT TO RESET FORM WHEN LOADING CHANGES ---
+  useEffect(() => {
+    // Reset form when submission is successful (loading goes from true to false and no error)
+    if (!loading && !error && isOpen) {
+      // Small delay to ensure the form resets after successful submission
+      const timer = setTimeout(() => {
+        if (!loading && !error) {
+          resetForm();
+        }
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [loading, error, isOpen]);
 
   if (!isOpen) return null;
 

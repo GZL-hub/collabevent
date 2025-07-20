@@ -39,30 +39,49 @@ const TeamActivityContent: React.FC = () => {
       // Option 1: From localStorage (if stored during login)
       const storedUserId = localStorage.getItem('userId');
       if (storedUserId && storedUserId !== 'current-user-id') {
+        console.log('Found userId in localStorage:', storedUserId);
         return storedUserId;
       }
 
-      // Option 2: From auth token
+      // Option 2: From stored user object
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const user = JSON.parse(storedUser);
+          const userId = user._id || user.id;
+          if (userId) {
+            console.log('Found userId in stored user object:', userId);
+            return userId;
+          }
+        } catch (err) {
+          console.error('Error parsing stored user:', err);
+        }
+      }
+
+      // Option 3: From auth token
       const token = localStorage.getItem('token') || localStorage.getItem('authToken');
       if (token) {
         try {
           // Decode JWT token to get user ID
           const payload = JSON.parse(atob(token.split('.')[1]));
-          return payload.userId || payload.id || payload.sub;
+          const userId = payload.userId || payload.id || payload.sub;
+          if (userId) {
+            console.log('Found userId in token:', userId);
+            return userId;
+          }
         } catch (err) {
           console.error('Error decoding token:', err);
         }
       }
 
-      // Option 3: Use a real user ID from your database for testing
-      // Based on your sample data, use the admin user ID
-      return '68774c5d303caa8b867ae00c'; // Admin User from your sample data
+      console.error('No valid user ID found in any storage location');
+      return null; // Return null instead of hardcoded ID
     };
 
     const userId = getUserId();
     console.log('Current user ID:', userId);
     
-    if (!userId || userId === 'current-user-id') {
+    if (!userId) {
       setAuthError('User not authenticated. Please log in again.');
       return;
     }

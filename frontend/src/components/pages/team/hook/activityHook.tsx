@@ -23,25 +23,54 @@ export const useActivities = () => {
     const activityOwnerId = activity.user?._id || activity.user?.id || activity.userId || '';
 
     const getCurrentUserId = () => {
+      // First, try the direct userId storage
       const storedUserId = localStorage.getItem('userId');
-      if (storedUserId && storedUserId !== 'current-user-id') {
+      if (storedUserId && storedUserId !== 'current-user-id' && storedUserId !== 'null') {
+        console.log('✅ getCurrentUserId: Found in userId storage:', storedUserId);
         return storedUserId;
       }
-      const token = localStorage.getItem('token') || localStorage.getItem('authToken');
-      if (token) {
+
+      // Then try parsing the user object
+      const storedUser = localStorage.getItem('user');
+      if (storedUser && storedUser !== 'null') {
         try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          return payload.userId || payload.id || payload.sub;
+          const user = JSON.parse(storedUser);
+          const userId = user._id || user.id;
+          if (userId && userId !== 'null') {
+            console.log('✅ getCurrentUserId: Found in user object:', userId);
+            // Store it for next time
+            localStorage.setItem('userId', userId);
+            return userId;
+          }
         } catch (err) {
-          console.error('Error decoding token:', err);
+          console.error('❌ getCurrentUserId: Error parsing stored user:', err);
         }
       }
-      return '68774c5d303caa8b867ae00c'; // Fallback for testing
+
+      // Finally, try the token
+      const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+      if (token && token !== 'null') {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const userId = payload.userId || payload.id || payload.sub;
+          if (userId && userId !== 'null') {
+            console.log('✅ getCurrentUserId: Found in token:', userId);
+            // Store it for next time
+            localStorage.setItem('userId', userId);
+            return userId;
+          }
+        } catch (err) {
+          console.error('❌ getCurrentUserId: Error decoding token:', err);
+        }
+      }
+      
+      console.error('❌ getCurrentUserId: No valid user ID found anywhere');
+      return null;
     };
 
     const currentUserId = getCurrentUserId();
     const likedByArray = activity.likedBy || [];
-    const isLiked = likedByArray.some((userId: string) => userId === currentUserId);
+    const isLiked = currentUserId ? likedByArray.some((userId: string) => userId === currentUserId) : false;
 
     // Helpful debug log to see what the transformation is producing
     console.log('Transforming Activity:', {
@@ -139,52 +168,68 @@ export const useActivities = () => {
     }
   }, [transformActivity]);
 
-    // Like activity 
-    const likeActivity = useCallback(async (activityId: string, userId?: string) => {
+  // Like activity 
+  const likeActivity = useCallback(async (activityId: string, userId?: string) => {
     try {
-        setError(null);
-        
-        const getUserId = () => {
+      setError(null);
+      
+      const getUserId = () => {
         if (userId && userId !== 'current-user-id') {
-            return userId;
+          return userId;
         }
         
         const storedUserId = localStorage.getItem('userId');
         if (storedUserId && storedUserId !== 'current-user-id') {
-            return storedUserId;
+          return storedUserId;
         }
+
+        // Check stored user object
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          try {
+            const user = JSON.parse(storedUser);
+            const userId = user._id || user.id;
+            if (userId) {
+              return userId;
+            }
+          } catch (err) {
+            console.error('Error parsing stored user:', err);
+          }
+        }
+
         const token = localStorage.getItem('token') || localStorage.getItem('authToken');
         if (token) {
-            try {
+          try {
             const payload = JSON.parse(atob(token.split('.')[1]));
             return payload.userId || payload.id || payload.sub;
-            } catch (err) {
+          } catch (err) {
             console.error('Error decoding token:', err);
-            }
-        }
-        return '68774c5d303caa8b867ae00c'; // Fallback for testing
-        };
-        
-        const currentUserId = getUserId();
-        
-        if (!currentUserId || currentUserId === 'current-user-id') {
-        throw new Error('Valid user ID is required');
+          }
         }
         
-        const response = await ActivityService.likeActivity(activityId, currentUserId);
-        
-        if (response.success) {
+        return null; // Return null instead of hardcoded fallback
+      };
+      
+      const currentUserId = getUserId();
+      
+      if (!currentUserId) {
+        throw new Error('User not authenticated. Please log in again.');
+      }
+      
+      const response = await ActivityService.likeActivity(activityId, currentUserId);
+      
+      if (response.success) {
         const transformedActivity = transformActivity(response.data);
         setActivities(prev =>
-            prev.map(a => a._id === activityId ? transformedActivity : a)
+          prev.map(a => a._id === activityId ? transformedActivity : a)
         );
-        }
+      }
     } catch (err) {
-        console.error('Error liking activity:', err);
-        setError(err instanceof Error ? err.message : 'Failed to like activity');
-        throw err;
+      console.error('Error liking activity:', err);
+      setError(err instanceof Error ? err.message : 'Failed to like activity');
+      throw err;
     }
-    }, [transformActivity]);
+  }, [transformActivity]);
 
   // Pin activity
   const pinActivity = useCallback(async (activityId: string) => {

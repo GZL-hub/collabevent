@@ -290,42 +290,79 @@ exports.updateActivity = async (req, res) => {
   }
 };
 
-// Delete activity
-exports.deleteActivity = async (req, res) => {
-  try {
-    const activityId = req.params.id;
-    
-    const deletedActivity = await Activity.findByIdAndDelete(activityId);
-    
-    if (!deletedActivity) {
-      return res.status(404).json({
+  // Delete activity
+  exports.deleteActivity = async (req, res) => {
+    try {
+      const activityId = req.params.id;
+      const requestUserId = req.body.userId || req.user?.id; // Get from body or auth middleware
+      
+      console.log('Delete activity request:', { activityId, requestUserId });
+      
+      // Validate inputs
+      if (!requestUserId) {
+        return res.status(400).json({
+          success: false,
+          message: 'User ID is required'
+        });
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(activityId)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid activity ID format'
+        });
+      }
+
+      // Find the activity first to check ownership
+      const activity = await Activity.findById(activityId);
+      
+      if (!activity) {
+        return res.status(404).json({
+          success: false,
+          message: 'Activity not found'
+        });
+      }
+
+      // ✅ SECURITY FIX: Check if the requesting user owns this activity
+      const activityOwnerId = activity.user?.id || activity.user?._id || activity.userId;
+      console.log('Ownership check:', { 
+        activityOwnerId: activityOwnerId?.toString(),
+        requestUserId: requestUserId.toString(),
+        isOwner: activityOwnerId?.toString() === requestUserId.toString()
+      });
+
+      if (activityOwnerId?.toString() !== requestUserId.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only delete your own activities'
+        });
+      }
+
+      // If ownership check passes, delete the activity
+      const deletedActivity = await Activity.findByIdAndDelete(activityId);
+      
+      res.json({
+        success: true,
+        message: 'Activity deleted successfully',
+        data: deletedActivity
+      });
+      
+    } catch (error) {
+      console.error('Error deleting activity:', error);
+      
+      if (error.name === 'CastError') {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid activity ID format'
+        });
+      }
+      
+      res.status(500).json({
         success: false,
-        message: 'Activity not found'
+        message: 'Server error while deleting activity'
       });
     }
-    
-    res.json({
-      success: true,
-      message: 'Activity deleted successfully',
-      data: deletedActivity
-    });
-    
-  } catch (error) {
-    console.error('Error deleting activity:', error);
-    
-    if (error.name === 'CastError') {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid activity ID format'
-      });
-    }
-    
-    res.status(500).json({
-      success: false,
-      message: 'Server error while deleting activity'
-    });
-  }
-};
+  };
 
 // Like/Unlike activity
 exports.likeActivity = async (req, res) => {

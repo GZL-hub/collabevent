@@ -27,10 +27,12 @@ export interface ActivityEvent {
 }
 
 export interface ActivityMention {
-  userId: string;
+  _id?: string;
+  id?: string;  // ✅ Add id property
   name: string;
+  email?: string;
+  userId?: string;
 }
-
 export interface ActivityReply {
   _id: string;
   id: string; // ✅ REQUIRED

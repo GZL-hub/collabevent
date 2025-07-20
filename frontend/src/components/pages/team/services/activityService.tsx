@@ -45,6 +45,45 @@ class ActivityService {
     return response.json();
   }
 
+  // Helper method to get current user ID
+  private getCurrentUserId(): string | null {
+    // First, try the direct userId storage
+    const storedUserId = localStorage.getItem('userId');
+    if (storedUserId && storedUserId !== 'current-user-id' && storedUserId !== 'null') {
+      return storedUserId;
+    }
+
+    // Then try parsing the user object
+    const storedUser = localStorage.getItem('user');
+    if (storedUser && storedUser !== 'null') {
+      try {
+        const user = JSON.parse(storedUser);
+        const userId = user._id || user.id;
+        if (userId && userId !== 'null') {
+          return userId;
+        }
+      } catch (err) {
+        console.error('Error parsing stored user:', err);
+      }
+    }
+
+    // Finally, try the token
+    const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+    if (token && token !== 'null') {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userId = payload.userId || payload.id || payload.sub;
+        if (userId && userId !== 'null') {
+          return userId;
+        }
+      } catch (err) {
+        console.error('Error decoding token:', err);
+      }
+    }
+    
+    return null;
+  }
+
   // Get all activities with filtering and pagination
   async getActivities(params?: {
     type?: string;
@@ -98,31 +137,39 @@ class ActivityService {
   }
 
   // Update activity
-  async updateActivity(id: string, updates: {
-    message?: string;
-    tags?: string[];
-    isPinned?: boolean;
-  }): Promise<{
-    success: boolean;
-    message: string;
-    data: Activity;
-  }> {
-    return this.fetchWithAuth(`/api/activities/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(updates),
-    });
-  }
+    // async updateActivity(id: string, updates: {
+    //   message?: string;
+    //   tags?: string[];
+    //   isPinned?: boolean;
+    // }): Promise<{
+    //   success: boolean;
+    //   message: string;
+    //   data: Activity;
+    // }> {
+    //   return this.fetchWithAuth(`/api/activities/${id}`, {
+    //     method: 'PUT',
+    //     body: JSON.stringify(updates),
+    //   });
+    // }
 
-  // Delete activity
-  async deleteActivity(id: string): Promise<{
+  // Delete activity - ✅ UPDATED: Now includes userId for authorization
+  async deleteActivity(id: string, userId?: string): Promise<{
     success: boolean;
     message: string;
     data: Activity;
   }> {
-    console.log('ActivityService.deleteActivity called with:', { id });
+    // Get user ID - use provided one or get current user
+    const currentUserId = userId || this.getCurrentUserId();
+    
+    if (!currentUserId) {
+      throw new Error('User not authenticated. Please log in again.');
+    }
+
+    console.log('ActivityService.deleteActivity called with:', { id, userId: currentUserId });
     
     return this.fetchWithAuth(`/api/activities/${id}`, {
       method: 'DELETE',
+      body: JSON.stringify({ userId: currentUserId }), // ✅ Send userId in body for authorization
     });
   }
 
@@ -141,15 +188,24 @@ class ActivityService {
     });
   }
 
-  // Pin/Unpin activity
-  async pinActivity(id: string, isPinned: boolean): Promise<{
+  // Pin/Unpin activity - ✅ UPDATED: Add userId for authorization
+  async pinActivity(id: string, isPinned: boolean, userId?: string): Promise<{
     success: boolean;
     message: string;
     data: Activity;
   }> {
+    const currentUserId = userId || this.getCurrentUserId();
+    
+    if (!currentUserId) {
+      throw new Error('User not authenticated. Please log in again.');
+    }
+
     return this.fetchWithAuth(`/api/activities/${id}/pin`, {
       method: 'PUT',
-      body: JSON.stringify({ isPinned }),
+      body: JSON.stringify({ 
+        isPinned,
+        userId: currentUserId // Add userId for authorization
+      }),
     });
   }
 
@@ -179,6 +235,31 @@ class ActivityService {
     return this.fetchWithAuth(`/api/activities/${activityId}/reply/${replyId}`, {
       method: 'DELETE',
       body: JSON.stringify({ userId }), // Send userId in body for authorization
+    });
+  }
+
+  // Update activity - ✅ UPDATED: Add userId for authorization
+  async updateActivity(id: string, updates: {
+    message?: string;
+    tags?: string[];
+    isPinned?: boolean;
+  }, userId?: string): Promise<{
+    success: boolean;
+    message: string;
+    data: Activity;
+  }> {
+    const currentUserId = userId || this.getCurrentUserId();
+    
+    if (!currentUserId) {
+      throw new Error('User not authenticated. Please log in again.');
+    }
+
+    return this.fetchWithAuth(`/api/activities/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        ...updates,
+        userId: currentUserId // Add userId for authorization
+      }),
     });
   }
 

@@ -18,9 +18,8 @@ export const useActivities = () => {
   const transformActivity = useCallback((activity: any): Activity => {
     const activityId = activity._id || activity.id || '';
 
-    // ✅ FIX: Find the user ID from multiple possible fields on the raw activity object.
-    // This makes the ID resolution more robust.
-    const activityOwnerId = activity.user?._id || activity.user?.id || activity.userId || '';
+    // ✅ FIX: The problem is here - we need to extract the ID, not the whole object
+    const activityOwnerId = activity.user?.id || activity.user?._id || activity.userId || '';
 
     const getCurrentUserId = () => {
       // First, try the direct userId storage
@@ -72,12 +71,14 @@ export const useActivities = () => {
     const likedByArray = activity.likedBy || [];
     const isLiked = currentUserId ? likedByArray.some((userId: string) => userId === currentUserId) : false;
 
-    // Helpful debug log to see what the transformation is producing
-    console.log('Transforming Activity:', {
+    // ✅ IMPORTANT: Ensure activityOwnerId is a string, not an object
+    console.log('🔄 Transforming Activity (FIXED):', {
         activityId: activityId.slice(-6),
-        resolvedOwnerId: activityOwnerId,
-        rawActivityUser: activity.user,
-        rawActivityUserId: activity.userId,
+        activityOwnerId: activityOwnerId,
+        activityOwnerIdType: typeof activityOwnerId,
+        rawUserObject: activity.user,
+        currentUserId: currentUserId,
+        userIdMatch: activityOwnerId === currentUserId
     });
 
     return {
@@ -86,10 +87,9 @@ export const useActivities = () => {
       type: activity.type || 'comment',
       message: activity.message || '',
       user: {
-        // ✅ FIX: Use the resolved owner ID here. This ensures the ActivityItem
-        // gets the correct ID for the ownership check.
+        // ✅ IMPORTANT: Ensure both _id and id are set consistently as STRINGS
         _id: activityOwnerId,
-        id: activityOwnerId,
+        id: activityOwnerId, // This is what ActivityItem checks against
         name: activity.user?.name || 'Unknown User',
         email: activity.user?.email || '',
         avatarColor: activity.user?.avatarColor || 'blue',
@@ -296,7 +296,50 @@ export const useActivities = () => {
       setLoading(true);
       setError(null);
       
-      const response = await ActivityService.deleteActivity(activityId);
+      // Get current user ID
+      const getCurrentUserId = () => {
+        const storedUserId = localStorage.getItem('userId');
+        if (storedUserId && storedUserId !== 'current-user-id' && storedUserId !== 'null') {
+          return storedUserId;
+        }
+
+        const storedUser = localStorage.getItem('user');
+        if (storedUser && storedUser !== 'null') {
+          try {
+            const user = JSON.parse(storedUser);
+            const userId = user._id || user.id;
+            if (userId && userId !== 'null') {
+              return userId;
+            }
+          } catch (err) {
+            console.error('Error parsing stored user:', err);
+          }
+        }
+
+        const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+        if (token && token !== 'null') {
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const userId = payload.userId || payload.id || payload.sub;
+            if (userId && userId !== 'null') {
+              return userId;
+            }
+          } catch (err) {
+            console.error('Error decoding token:', err);
+          }
+        }
+        
+        return null;
+      };
+
+      const currentUserId = getCurrentUserId();
+      
+      if (!currentUserId) {
+        throw new Error('User not authenticated. Please log in again.');
+      }
+      
+      // ✅ Pass userId to the service
+      const response = await ActivityService.deleteActivity(activityId, currentUserId);
       
       if (response.success) {
         setActivities(prev => prev.filter(activity => 
@@ -312,7 +355,7 @@ export const useActivities = () => {
       console.error('Error deleting activity:', err);
       throw err;
     }
-  }, []);
+  }, []);;
 
     // Delete reply
     const deleteReply = useCallback(async (activityId: string, replyId: string, userId: string) => {

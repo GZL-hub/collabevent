@@ -202,38 +202,47 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
     return colors[index];
   };
 
-  const handleSubmit = async () => {
-    if (!validateStep2() || isSubmitting) return;
+const handleSubmit = async () => {
+  if (!validateStep2() || isSubmitting) return;
 
-    setIsSubmitting(true);
+  setIsSubmitting(true);
 
-    try {
-      // For edit mode, preserve existing initials and avatar color if available
-      let initials = '';
-      let avatarColor = '';
+  try {
+    let initials = '';
+    let avatarColor = '';
 
-      if (mode === 'edit' && initialData?.assigneeInitials && initialData?.assigneeAvatarColor) {
-        initials = initialData.assigneeInitials;
-        avatarColor = initialData.assigneeAvatarColor;
-      } else {
-        initials = getInitials(formData.assigneeName);
-        avatarColor = getAvatarColor(formData.assigneeName);
+    if (mode === 'edit' && initialData?.assigneeInitials && initialData?.assigneeAvatarColor) {
+      initials = initialData.assigneeInitials;
+      avatarColor = initialData.assigneeAvatarColor;
+    } else {
+      initials = getInitials(formData.assigneeName);
+      avatarColor = getAvatarColor(formData.assigneeName);
+    }
+
+    // 1. Reconstruct the start and end dates from form data.
+    const startDate = new Date(`${formData.eventDate}T${formData.startTime}`);
+    const endDate = new Date(`${formData.eventDate}T${formData.endTime}`);
+
+    // 2. Check if the end time is on the next day.
+    // If endTime is less than or equal to startTime, it implies the event crosses midnight into the next day.
+    if (endDate <= startDate) {
+      endDate.setDate(endDate.getDate() + 1);
+    }
+
+    const eventData: Omit<Event, '_id' | 'id' | 'createdAt' | 'updatedAt'> = {
+      title: formData.title.trim(),
+      startDate: startDate, // 3. Use the corrected startDate
+      endDate: endDate,     // 4. Use the corrected and potentially advanced endDate
+      location: formData.location.trim(),
+      attendeeType: formData.attendeeType,
+      status: formData.status,
+      assignee: {
+        id: formData.assigneeId,
+        name: formData.assigneeName.trim(),
+        initials,
+        avatarColor,
       }
-
-      const eventData: Omit<Event, '_id' | 'id' | 'createdAt' | 'updatedAt'> = {
-        title: formData.title.trim(),
-        startDate: new Date(`${formData.eventDate}T${formData.startTime}`),
-        endDate: new Date(`${formData.eventDate}T${formData.endTime}`),
-        location: formData.location.trim(),
-        attendeeType: formData.attendeeType,
-        status: formData.status,
-        assignee: {
-          id: formData.assigneeId,
-          name: formData.assigneeName.trim(),
-          initials,
-          avatarColor,
-        }
-      };
+    };
 
       await onSubmit(eventData);
       handleClose();

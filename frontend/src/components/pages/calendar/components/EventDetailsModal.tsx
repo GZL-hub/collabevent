@@ -1,5 +1,6 @@
 import React from 'react';
-import { Calendar, Clock, MapPin, Users, Eye, X } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, Edit, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface Event {
   _id: string;
@@ -33,7 +34,14 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
   getStatusTextColor,
   formatTime
 }) => {
+  const navigate = useNavigate();
+  
   if (!event) return null;
+
+  const handleEditEvent = () => {
+    // Navigate to the events page with edit=eventId parameter
+    navigate(`/events?edit=${event._id}`);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -108,13 +116,11 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
               Close
             </button>
             <button
-              onClick={() => {
-                window.location.href = `/events/${event._id}`;
-              }}
+              onClick={handleEditEvent}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
             >
-              <Eye className="w-4 h-4" />
-              <span>View Details</span>
+              <Edit className="w-4 h-4" />
+              <span>Edit Event</span>
             </button>
           </div>
         </div>

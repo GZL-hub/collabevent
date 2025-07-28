@@ -74,15 +74,30 @@ const EventsContent: React.FC = () => {
   const navigate = useNavigate();
   
   // Check for 'create=true' in URL to automatically open the create modal
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    if (searchParams.get('create') === 'true') {
-      // Open the create modal
-      setIsCreateModalOpen(true);
+useEffect(() => {
+  const searchParams = new URLSearchParams(location.search);
+  
+  if (searchParams.get('create') === 'true') {
+    // Open the create modal
+    setIsCreateModalOpen(true);
+    // Remove the parameter from URL to avoid reopening on refresh
+    navigate('/events', { replace: true });
+  }
+  
+  // Handle edit parameter
+  const editEventId = searchParams.get('edit');
+  if (editEventId) {
+    // Find the event with this ID
+    const eventToEdit = events.find(event => event._id === editEventId || event.id === editEventId);
+    if (eventToEdit) {
+      // Set the selected event and open the edit modal
+      setSelectedEvent(eventToEdit);
+      setIsEditModalOpen(true);
       // Remove the parameter from URL to avoid reopening on refresh
       navigate('/events', { replace: true });
     }
-  }, [location, navigate]);
+  }
+}, [location, navigate, events]);
 
   // Load events on component mount and when pagination/sorting changes
   useEffect(() => {

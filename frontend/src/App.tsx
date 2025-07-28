@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
 import Login from './components/pages/login/components/Login';
@@ -23,6 +24,64 @@ interface User {
   phone?: string;
   avatar?: string;
 }
+
+// Create a wrapper component to use router hooks
+const AppContent = ({ 
+  currentUser, 
+  isAuthenticated, 
+  isSidebarOpen, 
+  toggleSidebar, 
+  handleLogout,
+  currentPage,
+  setCurrentPage
+}) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Update currentPage based on URL
+  useEffect(() => {
+    const path = location.pathname.slice(1) || 'dashboard';
+    if (path !== currentPage) {
+      setCurrentPage(path);
+    }
+  }, [location.pathname, currentPage, setCurrentPage]);
+
+  return (
+    <div className="flex h-screen bg-gray-100">
+      <Sidebar 
+        isSidebarOpen={isSidebarOpen}
+        currentPage={currentPage}
+        toggleSidebar={toggleSidebar}
+        setCurrentPage={(page) => {
+          setCurrentPage(page);
+          navigate(`/${page}`);
+        }}
+      />
+
+      <div className="flex-1 overflow-auto">
+        <Header 
+          currentPage={currentPage}
+          toggleSidebar={toggleSidebar}
+          onLogout={handleLogout}
+          currentUser={currentUser}
+        />
+
+        <main className="p-6">
+          <Routes>
+            <Route path="/dashboard" element={<DashboardContent />} />
+            <Route path="/events" element={<EventsContent />} />
+            <Route path="/calendar" element={<CalendarContent />} />
+            <Route path="/notifications" element={<NotificationsContent />} />
+            <Route path="/team" element={<TeamActivityContent />} />
+            <Route path="/settings" element={<SettingsContent currentUser={currentUser} />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </main>
+      </div>
+    </div>
+  );
+};
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -74,25 +133,6 @@ const App: React.FC = () => {
     sessionStorage.removeItem('user')
   };
 
-  const renderContent = () => {
-    switch (currentPage) {
-      case 'dashboard':
-        return <DashboardContent />;
-      case 'events':
-        return <EventsContent />;
-      case 'calendar':
-        return <CalendarContent />;
-      case 'notifications':
-        return <NotificationsContent />;
-      case 'team':
-        return <TeamActivityContent />;
-      case 'settings':
-        return <SettingsContent currentUser={currentUser} />;
-      default:
-        return <DashboardContent />;
-    }
-  };
-
   // Show nothing which checking auth state
   if (authLoading) {
     return null;
@@ -100,32 +140,26 @@ const App: React.FC = () => {
 
   // Show login page if not authenticated
   if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
+    return (
+      <Router>
+        <Login onLogin={handleLogin} />
+      </Router>
+    );
   }
 
   // Show main application if authenticated
   return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar 
+    <Router>
+      <AppContent
+        currentUser={currentUser}
+        isAuthenticated={isAuthenticated}
         isSidebarOpen={isSidebarOpen}
-        currentPage={currentPage}
         toggleSidebar={toggleSidebar}
+        handleLogout={handleLogout}
+        currentPage={currentPage}
         setCurrentPage={setCurrentPage}
       />
-
-      <div className="flex-1 overflow-auto">
-        <Header 
-          currentPage={currentPage}
-          toggleSidebar={toggleSidebar}
-          onLogout={handleLogout}
-          currentUser={currentUser}
-        />
-
-        <main className="p-6">
-          {renderContent()}
-        </main>
-      </div>
-    </div>
+    </Router>
   );
 };
 

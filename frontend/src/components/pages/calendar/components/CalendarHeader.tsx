@@ -1,5 +1,6 @@
 import React from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Plus, Filter, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface CalendarHeaderProps {
   currentDate: Date;
@@ -24,8 +25,32 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   onCreateEvent,
   getStatusColor
 }) => {
+  const navigate = useNavigate();
+
+  // Function to redirect to events page with create modal open
+  const handleCreateEventClick = () => {
+    try {
+      // Attempt to navigate to events page
+      console.log("Navigating to events page...");
+      navigate('/events?create=true');
+      
+      // As a backup, trigger the onCreateEvent after a short delay
+      // This helps if the navigation didn't cause a re-render
+      setTimeout(() => {
+        // If we're already on the events page, this will still trigger the modal
+        console.log("Triggering create event as fallback...");
+        onCreateEvent();
+      }, 100);
+    } catch (error) {
+      console.error("Navigation error:", error);
+      // If navigation fails, use the provided handler directly
+      onCreateEvent();
+    }
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm">
+      {/* Component structure remains unchanged */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         {/* Title and Navigation */}
         <div className="flex items-center space-x-4">
@@ -65,7 +90,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           </button>
           
           <button
-            onClick={onCreateEvent}
+            onClick={handleCreateEventClick}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
           >
             <Plus className="w-4 h-4" />
@@ -74,6 +99,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         </div>
       </div>
 
+      {/* Rest of the component remains unchanged */}
       {/* Filters */}
       <div className="mt-4 flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1 max-w-md">

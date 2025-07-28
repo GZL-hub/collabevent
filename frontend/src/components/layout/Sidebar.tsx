@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -48,6 +49,25 @@ const Sidebar: React.FC<SidebarProps> = ({
     );
   };
 
+  // Create a navigation item that uses both the setCurrentPage function and Link component
+  const NavigationItem = ({ icon, text, path }) => {
+    const isActive = currentPage === path;
+    
+    return (
+      <li>
+        <Link to={`/${path}`}>
+          <SidebarItem 
+            icon={icon}
+            text={text}
+            isOpen={isSidebarOpen}
+            isActive={isActive}
+            onClick={() => setCurrentPage(path)}
+          />
+        </Link>
+      </li>
+    );
+  };
+
   return (
     <div className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 text-white transition-all duration-300 ease-in-out h-screen flex flex-col`}>
       {/* Header section - only show when expanded */}
@@ -75,47 +95,35 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Navigation */}
       <nav className={`${isSidebarOpen ? 'p-4' : 'p-2'} flex-1`}>
         <ul className="space-y-2">
-          <SidebarItem 
-            icon={<Grid size={20} />} 
-            text="Dashboard" 
-            isOpen={isSidebarOpen} 
-            isActive={currentPage === 'dashboard'}
-            onClick={() => setCurrentPage('dashboard')} 
+          <NavigationItem 
+            icon={<Grid size={20} />}
+            text="Dashboard"
+            path="dashboard"
           />
-          <SidebarItem 
-            icon={<Calendar size={20} />} 
-            text="Events" 
-            isOpen={isSidebarOpen} 
-            isActive={currentPage === 'events'}
-            onClick={() => setCurrentPage('events')} 
+          <NavigationItem 
+            icon={<Calendar size={20} />}
+            text="Events"
+            path="events"
           />
-          <SidebarItem 
-            icon={<Clock size={20} />} 
-            text="Calendar" 
-            isOpen={isSidebarOpen} 
-            isActive={currentPage === 'calendar'}
-            onClick={() => setCurrentPage('calendar')} 
+          <NavigationItem 
+            icon={<Clock size={20} />}
+            text="Calendar"
+            path="calendar"
           />
-          <SidebarItem 
-            icon={<Bell size={20} />} 
-            text="Notifications" 
-            isOpen={isSidebarOpen} 
-            isActive={currentPage === 'notifications'}
-            onClick={() => setCurrentPage('notifications')} 
+          <NavigationItem 
+            icon={<Bell size={20} />}
+            text="Notifications"
+            path="notifications"
           />
-          <SidebarItem 
-            icon={<Users size={20} />} 
-            text="Team Activity" 
-            isOpen={isSidebarOpen} 
-            isActive={currentPage === 'team'}
-            onClick={() => setCurrentPage('team')} 
+          <NavigationItem 
+            icon={<Users size={20} />}
+            text="Team Activity"
+            path="team"
           />
-          <SidebarItem 
-            icon={<Settings size={20} />} 
-            text="Settings" 
-            isOpen={isSidebarOpen} 
-            isActive={currentPage === 'settings'}
-            onClick={() => setCurrentPage('settings')} 
+          <NavigationItem 
+            icon={<Settings size={20} />}
+            text="Settings"
+            path="settings"
           />
         </ul>
       </nav>

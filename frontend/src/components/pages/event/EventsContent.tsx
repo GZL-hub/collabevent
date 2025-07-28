@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   useReactTable, 
   getCoreRowModel, 
@@ -35,6 +36,7 @@ const EventsContent: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   
+  
   // Fetch events from API
   const fetchEvents = async () => {
     try {
@@ -67,6 +69,20 @@ const EventsContent: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Check for 'create=true' in URL to automatically open the create modal
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get('create') === 'true') {
+      // Open the create modal
+      setIsCreateModalOpen(true);
+      // Remove the parameter from URL to avoid reopening on refresh
+      navigate('/events', { replace: true });
+    }
+  }, [location, navigate]);
 
   // Load events on component mount and when pagination/sorting changes
   useEffect(() => {
